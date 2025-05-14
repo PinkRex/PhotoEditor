@@ -22,10 +22,11 @@ void MainWindow::initUI(){
     fileMenu = menuBar()->addMenu("&File");
     viewMenu = menuBar()->addMenu("&View");
     editMenu = menuBar()->addMenu("&Edit");
-    helpMenu = menuBar()->addMenu("&Help");
 
     // TODO: Add change resource EN <-> VN
     settingMenu = menuBar()->addMenu("&Setting");
+
+    helpMenu = menuBar()->addMenu("&Help");
 
     // Init Toolbar
     fileToolBar = addToolBar("File");
@@ -143,7 +144,7 @@ void MainWindow::openImage() {
     QFileDialog dialog(this);
     dialog.setWindowTitle("Open Image");
 
-    // Alow Multiple Files
+    // Alow Single File
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setNameFilter(tr("Supported Image Files (*.png *.jpg)"));
     QStringList filePaths;
@@ -155,27 +156,88 @@ void MainWindow::openImage() {
 }
 
 void MainWindow::saveImageAs() {
+    if (currentImage == nullptr) {
+        QMessageBox::information(this, "Information", "Nothing to save!");
+        return;
+    }
 
+    QFileDialog dialog(this);
+    dialog.setWindowTitle("Save Image As ...");
+    dialog.setFileMode(QFileDialog::AnyFile);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setNameFilter(tr("Images (*.png *.jpg)"));
+
+    QStringList fileNames;
+
+    if(dialog.exec()) {
+        QString savePath = dialog.selectedFiles().at(0);
+        fileNames = dialog.selectedFiles();
+        static QRegularExpression re(".+\\.(png|bmp|jpg)");
+        if(re.match(fileNames.at(0)).hasMatch()) {
+            currentImage->pixmap().save(fileNames.at(0));
+            QMessageBox::information(this, "Save Successful", "The image has been saved successfully at: " + savePath);
+        } else {
+            QMessageBox::information(this, "Save Failed", "The image could not be saved. Please check the file name and format (PNG, JPG).");
+        }
+    }
 }
 
 void MainWindow::zoomInImage() {
-
+    imageView->scale(1.2, 1.2);
 }
 
 void MainWindow::zoomOutImage() {
-
+    imageView->scale(0.8, 0.8);
 }
 
 void MainWindow::previousImage() {
+    QFileInfo current(currentImagePath);
+    QDir dir = current.absoluteDir();
 
+    QStringList extensionFilters;
+    extensionFilters << "*.jpg" << "*png";
+    // Take files only and sort by name
+    QStringList fileNames = dir.entryList(extensionFilters, QDir::Files, QDir::Name);
+    // Get the index of the current files (after remove extension)
+    int index = fileNames.indexOf(QRegularExpression(QRegularExpression::escape(current.fileName())));
+    if (index > 0) {
+        showImage(dir.absoluteFilePath(fileNames.at(index - 1)));
+    } else {
+        QMessageBox::information(this, "Navigation", "This is the first image in the folder. There are no previous images to display.");
+    }
 }
 
 void MainWindow::nextImage() {
+    QFileInfo current(currentImagePath);
+    QDir dir = current.absoluteDir();
 
+    QStringList extensionFilters;
+    extensionFilters << "*.jpg" << "*png";
+    // Take files only and sort by name
+    QStringList fileNames = dir.entryList(extensionFilters, QDir::Files, QDir::Name);
+    // Get the index of the current files (after remove extension)
+    int index = fileNames.indexOf(QRegularExpression(QRegularExpression::escape(current.fileName())));
+    if (index < fileNames.length() - 1) {
+        showImage(dir.absoluteFilePath(fileNames.at(index + 1)));
+    } else {
+        QMessageBox::information(this, "Navigation", "This is the last image in the folder. There are no more images to display.");
+    }
 }
 
 void MainWindow::about() {
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle("About");
 
+    QString text =
+        "<b>Photo Editor</b><br>"
+        "Developed by Nguyen Minh Duc<br><br>"
+        "This application was developed as a mini project for the VDT2025 program.<br>"
+        "Github Repository: <a href='https://github.com/PinkRex/PhotoEditor.git'>Pinkrex/PhotoEditor</a>";
+
+    msgBox.setTextFormat(Qt::RichText);
+    msgBox.setTextInteractionFlags(Qt::TextBrowserInteraction);
+    msgBox.setText(text);
+    msgBox.exec();
 }
 
 void MainWindow::rotateImage() {
