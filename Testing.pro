@@ -23,9 +23,11 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../opencv/build/x64/vc14/lib/ -lopencv_world455
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../opencv/build/x64/vc14/lib/ -lopencv_world455d
-else:unix:!macx: LIBS += -L$$PWD/../../../../../opencv/build/x64/vc14/lib/ -lopencv_world455
 
-INCLUDEPATH += $$PWD/../../../../../opencv/build/include
-DEPENDPATH += $$PWD/../../../../../opencv/build/include
+win32: LIBS += -L$$PWD/../../../Downloads/opencv4.5.1_MinGW/opencv4.5.1_MinGW/install/x64/mingw/lib/ -llibopencv_highgui451.dll
+win32: LIBS += -L$$PWD/../../../Downloads/opencv4.5.1_MinGW/opencv4.5.1_MinGW/install/x64/mingw/lib/ -llibopencv_imgproc451.dll
+win32: LIBS += -L$$PWD/../../../Downloads/opencv4.5.1_MinGW/opencv4.5.1_MinGW/install/x64/mingw/lib/ -llibopencv_core451.dll
+win32: LIBS += -L$$PWD/../../../Downloads/opencv4.5.1_MinGW/opencv4.5.1_MinGW/install/x64/mingw/lib/ -llibopencv_imgcodecs451.dll
+
+INCLUDEPATH += $$PWD/../../../Downloads/opencv4.5.1_MinGW/opencv4.5.1_MinGW/install/include
+DEPENDPATH += $$PWD/../../../Downloads/opencv4.5.1_MinGW/opencv4.5.1_MinGW/install/include

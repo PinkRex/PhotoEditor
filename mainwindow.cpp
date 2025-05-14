@@ -8,6 +8,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     initUI();
     currentImage = nullptr;
+    qDebug() << CV_VERSION;
 }
 
 MainWindow::~MainWindow()
@@ -241,5 +242,54 @@ void MainWindow::about() {
 }
 
 void MainWindow::rotateImage() {
+    // if (currentImage == nullptr) {
+    //     QMessageBox::information(this, "Information", "No image to edit.");
+    //     return;
+    // }
 
+    // QPixmap pixmap = currentImage->pixmap();
+    // QImage image = pixmap.toImage();
+    // image = image.convertToFormat(QImage::Format_RGB888);
+
+    // cv::Mat mat = cv::Mat(image.height(), image.width(), CV_8UC3, image.bits(), image.bytesPerLine());
+
+    // double angle = 45.0;
+    // double scale = 1.0;
+    // cv::Point2f center = cv::Point(mat.cols/2, mat.rows/2);
+    // cv::Mat rotateMatrix = cv::getRotationMatrix2D(center, angle, scale);
+    // cv::Mat result;
+    // cv::warpAffine(mat, result, rotateMatrix, mat.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT);
+
+    // QImage image_edited(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_RGB888);
+    // pixmap = QPixmap::fromImage(image_edited);
+    // imageScene->clear();
+    // imageView->resetTransform();
+    // currentImage = imageScene->addPixmap(pixmap);
+    // imageScene->update();
+    // imageView->setSceneRect(pixmap.rect());
+    // QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
+    // imageStatusLabel->setText(status);
+
+
+
+        if(currentImage == nullptr) {
+            QMessageBox::information(this, "Information", "No image to edit.");
+            return;
+        }
+        QPixmap pixmap = currentImage->pixmap();
+        QImage image = pixmap.toImage();
+        image = image.convertToFormat(QImage::Format_RGB888);
+        cv::Mat mat = cv::Mat(image.height(), image.width(), CV_8UC3, image.bits(), image.bytesPerLine());
+        cv::Mat tmp;
+        cv::blur(mat, tmp, cv::Size(8, 8));
+        mat = tmp;
+        QImage image_blurred(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_RGB888);
+        pixmap = QPixmap::fromImage(image_blurred);
+        imageScene->clear();
+        imageView->resetTransform();
+        currentImage = imageScene->addPixmap(pixmap);
+        imageScene->update();
+        imageView->setSceneRect(pixmap.rect());
+        QString status = QString("(editted image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
+        imageStatusLabel->setText(status);
 }
