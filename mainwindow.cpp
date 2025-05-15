@@ -12,6 +12,56 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug() << currentAngle;
 }
 
+class CustomGraphicsView : public QGraphicsView {
+public:
+    explicit CustomGraphicsView(QWidget *parent = nullptr) : QGraphicsView(parent), selecting(false) {}
+
+    QRect getSelectionRect() const {
+        return mapToScene(selectionRect).boundingRect().toRect();
+    }
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override {
+        if (event->button() == Qt::LeftButton) {
+            origin = event->pos();
+            selectionRect = QRect();
+            selecting = true;
+            viewport()->update();
+        }
+        QGraphicsView::mousePressEvent(event);
+    }
+
+    void mouseMoveEvent(QMouseEvent *event) override {
+        if (selecting) {
+            selectionRect = QRect(origin, event->pos()).normalized();
+            viewport()->update();
+        }
+        QGraphicsView::mouseMoveEvent(event);
+    }
+
+    void mouseReleaseEvent(QMouseEvent *event) override {
+        if (event->button() == Qt::LeftButton && selecting) {
+            selecting = false;
+            viewport()->update();
+        }
+        QGraphicsView::mouseReleaseEvent(event);
+    }
+
+    void drawForeground(QPainter *painter, const QRectF &rect) override {
+        Q_UNUSED(rect);
+        if (!selectionRect.isNull()) {
+            painter->setPen(QPen(Qt::red, 2));
+            painter->drawRect(mapToScene(selectionRect).boundingRect());
+        }
+    }
+
+private:
+    QPoint origin;
+    QRect selectionRect;
+    bool selecting;
+};
+
+
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -37,7 +87,8 @@ void MainWindow::initUI(){
 
     // Init Image Display Area
     imageScene = new QGraphicsScene(this);
-    imageView = new QGraphicsView(imageScene);
+    imageView = new ImageView(this);
+    imageView->setScene(imageScene);
     setCentralWidget(imageView);
 
     // Init Image Information Display
@@ -90,7 +141,12 @@ void MainWindow::initUI(){
 
     // Group Edit menu & Edit toolbar
     editMenu->addAction(rotateImageAction);
+    editMenu->addAction(resizeImageAction);
+    editMenu->addAction(cropImageAction);
+
     editToolBar->addAction(rotateImageAction);
+    editToolBar->addAction(resizeImageAction);
+    editToolBar->addAction(cropImageAction);
 
     // Group Help menu
     helpMenu->addAction(aboutAction);
@@ -105,8 +161,10 @@ void MainWindow::createActions() {
     zoomOutAction = new QAction("&Zoom Out", this);
     previousImageAction = new QAction("&Previous Image", this);
     nextImageAction = new QAction("&Next Image", this);
-    rotateImageAction = new QAction("&Rotate Image", this);
     aboutAction = new QAction("&About", this);
+    rotateImageAction = new QAction("&Rotate Image", this);
+    resizeImageAction = new QAction("&Resize Image", this);
+    cropImageAction = new QAction("&Crop Image", this);
 
     // Setup Action Slot
     connect(exitAction, SIGNAL(triggered(bool)), QApplication::instance(), SLOT(quit()));
@@ -118,6 +176,8 @@ void MainWindow::createActions() {
     connect(nextImageAction, SIGNAL(triggered(bool)), this, SLOT(nextImage()));
     connect(aboutAction, SIGNAL(triggered(bool)), this, SLOT(about()));
     connect(rotateImageAction, SIGNAL(triggered(bool)), this, SLOT(rotateImage()));
+    connect(resizeImageAction, SIGNAL(triggered(bool)), this, SLOT(resizeImage()));
+    connect(cropImageAction, &QAction::triggered, this, &MainWindow::cropImage);
 }
 
 void MainWindow::showImage(QString path) {
@@ -232,7 +292,7 @@ void MainWindow::about() {
 
     QString text =
         "<b>Photo Editor</b><br>"
-        "Developed by Nguyen Minh Duc<br><br>"
+        "Developed by Nguyễn Minh Đức<br><br>"
         "This application was developed as a mini project for the VDT2025 program.<br>"
         "Github Repository: <a href='https://github.com/PinkRex/PhotoEditor.git'>Pinkrex/PhotoEditor</a>";
 
@@ -241,29 +301,6 @@ void MainWindow::about() {
     msgBox.setText(text);
     msgBox.exec();
 }
-
-// QPixmap CvMatToQpixmap(cv::Mat matImage) {
-//     if (matImage.type() == CV_8UC4) {
-//         qDebug() << "Image Type is: 32 bit";
-//         QImage image_edited(matImage.data, matImage.cols, matImage.rows, static_cast<int>(matImage.step), QImage::Format_RGB888);
-//         return QPixmap::fromImage(image_edited.rgbSwapped());
-//     } else if (matImage.type() == CV_8UC3) {
-//         qDebug() << "Image Type is: 24 bit";
-//         QImage image_edited(matImage.data, matImage.cols, matImage.rows, static_cast<int>(matImage.step), QImage::Format_RGB888);
-//         return QPixmap::fromImage(image_edited.rgbSwapped());
-//     } else if (matImage.type() == CV_8UC1) {
-//         qDebug() << "Image Type is: 8 bit";
-//         QImage image_edited(matImage.data, matImage.cols, matImage.rows, static_cast<int>(matImage.step), QImage::Format_Grayscale8);
-//         return QPixmap::fromImage(image_edited);
-//     } else if (matImage.type() == CV_8UC2) {
-//         qDebug() << "Image Type is: 16 bit";
-//         QImage image_edited(matImage.data, matImage.cols, matImage.rows, static_cast<int>(matImage.step), QImage::Format_Grayscale16);
-//         return QPixmap::fromImage(image_edited);
-//     }
-
-//     QImage image_edited(matImage.data, matImage.cols, matImage.rows, static_cast<int>(matImage.step), QImage::Format_RGB888);
-//     return QPixmap::fromImage(image_edited.rgbSwapped());
-// }
 
 QPixmap CvMatToQpixmap(cv::Mat matImage) {
     QImage image_edited;
@@ -282,7 +319,6 @@ QPixmap CvMatToQpixmap(cv::Mat matImage) {
 
     return QPixmap::fromImage(image_edited);
 }
-
 
 void MainWindow::rotateImage() {
     if (currentImage == nullptr) {
@@ -321,5 +357,64 @@ void MainWindow::rotateImage() {
     imageView->setSceneRect(pixmap.rect());
 
     QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
+    imageStatusLabel->setText(status);
+}
+
+void MainWindow::resizeImage() {
+    if (currentImage == nullptr) {
+        QMessageBox::warning(this, "Warning", "No image to edit.");
+        return;
+    }
+
+    bool okWidth, okHeight;
+    int width = QInputDialog::getInt(this, "Resize Image", "Enter new width:", 25, 1, 10000, 1, &okWidth);
+    if (!okWidth) return;
+
+    int height = QInputDialog::getInt(this, "Resize Image", "Enter new height:", 25, 1, 10000, 1, &okHeight);
+    if (!okHeight) return;
+
+    cv::Mat mat = cv::imread(currentImagePath.toUtf8().constData(), cv::IMREAD_COLOR);
+    if (mat.empty()) {
+        QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
+        QMessageBox::warning(this, "Error", message);
+        return;
+    }
+
+    cv::Mat destImage;
+    cv::resize(mat, destImage, cv::Size(width, height));
+
+    QPixmap pixmap = CvMatToQpixmap(destImage);
+
+    imageScene->clear();
+    imageView->resetTransform();
+    currentImage = imageScene->addPixmap(pixmap);
+    imageScene->update();
+    imageView->setSceneRect(pixmap.rect());
+    QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
+    imageStatusLabel->setText(status);
+}
+
+void MainWindow::cropImage() {
+    if (currentImage == nullptr) {
+        QMessageBox::information(this, "Information", "No image to crop.");
+        return;
+    }
+
+    // Get Cropped Area
+    QRect selection = imageView->getSelectionRect();
+    if (selection.isNull() || selection.width() == 0 || selection.height() == 0) {
+        QMessageBox::information(this, "Information", "No selection made for cropping.");
+        return;
+    }
+
+    // Crop Image
+    QPixmap originalPixmap = currentImage->pixmap();
+    QPixmap croppedPixmap = originalPixmap.copy(selection);
+
+    imageScene->clear();
+    currentImage = imageScene->addPixmap(croppedPixmap);
+    imageScene->update();
+    imageView->setSceneRect(croppedPixmap.rect());
+    QString status = QString("(eddited image), %1x%2").arg(croppedPixmap.width()).arg(croppedPixmap.height());
     imageStatusLabel->setText(status);
 }

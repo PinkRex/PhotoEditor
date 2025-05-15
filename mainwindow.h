@@ -15,6 +15,9 @@
 #include <QPluginLoader>
 #include <QHBoxLayout>
 #include <QDebug>
+#include <QInputDialog>
+#include <QMouseEvent>
+#include <ImageView.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -47,8 +50,10 @@ private slots:
     void zoomOutImage();
     void previousImage();
     void nextImage();
-    void rotateImage();
     void about();
+    void rotateImage();
+    void resizeImage();
+    void cropImage();
 
 private:
     QMenu *fileMenu;
@@ -62,7 +67,7 @@ private:
     QToolBar *editToolBar;
 
     QGraphicsScene *imageScene;
-    QGraphicsView *imageView;
+    ImageView *imageView;
 
     QStatusBar *imageStatusBar;
     QLabel *imageStatusLabel;
@@ -78,8 +83,11 @@ private:
     QAction *zoomOutAction;
     QAction *previousImageAction;
     QAction *nextImageAction;
-    QAction *rotateImageAction;
     QAction *aboutAction;
+    QAction *rotateImageAction;
+    QAction *resizeImageAction;
+    QAction *cropImageAction;
+
     double currentAngle = 0.0;
 };
 #endif // MAINWINDOW_H
