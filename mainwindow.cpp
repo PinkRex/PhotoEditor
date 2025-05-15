@@ -8,8 +8,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     initUI();
     currentImage = nullptr;
-    qDebug() << CV_VERSION;
-    qDebug() << currentAngle;
 }
 
 class CustomGraphicsView : public QGraphicsView {
@@ -116,7 +114,6 @@ void MainWindow::initUI(){
     layout->addWidget(rightSpacer);
     imageStatusBar->addPermanentWidget(container, 1);
 
-    // Create Actions
     createActions();
 
     // Group File menu & File toolbar
@@ -153,7 +150,6 @@ void MainWindow::initUI(){
 }
 
 void MainWindow::createActions() {
-    // Init Action Text
     openAction = new QAction("&Open", this);
     saveAsAction = new QAction("&Save As", this);
     exitAction = new QAction("&Exit", this);
@@ -166,7 +162,6 @@ void MainWindow::createActions() {
     resizeImageAction = new QAction("&Resize Image", this);
     cropImageAction = new QAction("&Crop Image", this);
 
-    // Setup Action Slot
     connect(exitAction, SIGNAL(triggered(bool)), QApplication::instance(), SLOT(quit()));
     connect(openAction, SIGNAL(triggered(bool)), this, SLOT(openImage()));
     connect(saveAsAction, SIGNAL(triggered(bool)), this, SLOT(saveImageAs()));
@@ -181,17 +176,13 @@ void MainWindow::createActions() {
 }
 
 void MainWindow::showImage(QString path) {
-    // Remove Previous Image
     imageScene->clear();
     imageView->resetTransform();
-
-    // Load Image
     QPixmap image(path);
     currentImage = imageScene->addPixmap(image);
     imageScene->update();
     imageView->setSceneRect(image.rect());
 
-    // Display Image Infomation
     QString status = QString("%1, %2x%3, %4 Bytes")
                          .arg(path)
                          .arg(image.width())
@@ -202,11 +193,9 @@ void MainWindow::showImage(QString path) {
 }
 
 void MainWindow::openImage() {
-    // Open File Explorer
     QFileDialog dialog(this);
     dialog.setWindowTitle("Open Image");
 
-    // Alow Single File
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setNameFilter(tr("Supported Image Files (*.png *.jpg)"));
     QStringList filePaths;
@@ -258,9 +247,7 @@ void MainWindow::previousImage() {
 
     QStringList extensionFilters;
     extensionFilters << "*.jpg" << "*png";
-    // Take files only and sort by name
     QStringList fileNames = dir.entryList(extensionFilters, QDir::Files, QDir::Name);
-    // Get the index of the current files (after remove extension)
     int index = fileNames.indexOf(QRegularExpression(QRegularExpression::escape(current.fileName())));
     if (index > 0) {
         showImage(dir.absoluteFilePath(fileNames.at(index - 1)));
@@ -275,9 +262,7 @@ void MainWindow::nextImage() {
 
     QStringList extensionFilters;
     extensionFilters << "*.jpg" << "*png";
-    // Take files only and sort by name
     QStringList fileNames = dir.entryList(extensionFilters, QDir::Files, QDir::Name);
-    // Get the index of the current files (after remove extension)
     int index = fileNames.indexOf(QRegularExpression(QRegularExpression::escape(current.fileName())));
     if (index < fileNames.length() - 1) {
         showImage(dir.absoluteFilePath(fileNames.at(index + 1)));
@@ -302,23 +287,23 @@ void MainWindow::about() {
     msgBox.exec();
 }
 
-QPixmap CvMatToQpixmap(cv::Mat matImage) {
-    QImage image_edited;
+// QPixmap CvMatToQpixmap(cv::Mat matImage) {
+//     QImage image_edited;
 
-    if (matImage.channels() == 4) {
-        cv::cvtColor(matImage, matImage, cv::COLOR_BGRA2RGBA);
-        image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_RGBA8888).copy();
-    } else if (matImage.channels() == 3) {
-        cv::cvtColor(matImage, matImage, cv::COLOR_BGR2RGB);
-        image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_RGB888).copy();
-    } else if (matImage.channels() == 1) {
-        image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_Grayscale8).copy();
-    } else {
-        image_edited = QImage();
-    }
+//     if (matImage.channels() == 4) {
+//         cv::cvtColor(matImage, matImage, cv::COLOR_BGRA2RGBA);
+//         image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_RGBA8888).copy();
+//     } else if (matImage.channels() == 3) {
+//         cv::cvtColor(matImage, matImage, cv::COLOR_BGR2RGB);
+//         image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_RGB888).copy();
+//     } else if (matImage.channels() == 1) {
+//         image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_Grayscale8).copy();
+//     } else {
+//         image_edited = QImage();
+//     }
 
-    return QPixmap::fromImage(image_edited);
-}
+//     return QPixmap::fromImage(image_edited);
+// }
 
 void MainWindow::rotateImage() {
     if (currentImage == nullptr) {
@@ -348,7 +333,7 @@ void MainWindow::rotateImage() {
 
     cv::Mat result;
     cv::warpAffine(mat, result, rotateMatrix, boundingBox.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
-    QPixmap pixmap = CvMatToQpixmap(result);
+    QPixmap pixmap = Helper::CvMatToQPixmap(result);
 
     imageScene->clear();
     imageView->resetTransform();
@@ -383,7 +368,7 @@ void MainWindow::resizeImage() {
     cv::Mat destImage;
     cv::resize(mat, destImage, cv::Size(width, height));
 
-    QPixmap pixmap = CvMatToQpixmap(destImage);
+    QPixmap pixmap = Helper::CvMatToQPixmap(destImage);
 
     imageScene->clear();
     imageView->resetTransform();
