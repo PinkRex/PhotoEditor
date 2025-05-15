@@ -43,6 +43,7 @@ private:
     void initUI();
     void createActions();
     void showImage(QString path);
+    void UpdateView(QPixmap pixmap);
 
 private slots:
     void openImage();
@@ -90,5 +91,7 @@ private:
     QAction *cropImageAction;
 
     double currentAngle = 0.0;
+    cv::Mat originalImage;
+    cv::Mat editedImage;
 };
 #endif // MAINWINDOW_H

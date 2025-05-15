@@ -121,21 +121,26 @@ void MainWindow::createActions() {
     connect(cropImageAction, &QAction::triggered, this, &MainWindow::cropImage);
 }
 
-void MainWindow::showImage(QString path) {
+void MainWindow::UpdateView(QPixmap pixmap) {
     imageScene->clear();
     imageView->resetTransform();
-    QPixmap image(path);
-    currentImage = imageScene->addPixmap(image);
+    currentImage = imageScene->addPixmap(pixmap);
     imageScene->update();
-    imageView->setSceneRect(image.rect());
+    imageView->setSceneRect(pixmap.rect());
+}
 
+void MainWindow::showImage(QString path) {
+    originalImage = cv::imread(path.toUtf8().constData(), cv::IMREAD_COLOR);
+    editedImage = originalImage.clone();
+
+    QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
+    UpdateView(pixmap);
     QString status = QString("%1, %2x%3, %4 Bytes")
                          .arg(path)
-                         .arg(image.width())
-                         .arg(image.height())
+                         .arg(pixmap.width())
+                         .arg(pixmap.height())
                          .arg(QFile(path).size());
     imageStatusLabel->setText(status);
-    currentImagePath = path;
 }
 
 void MainWindow::openImage() {
@@ -148,6 +153,7 @@ void MainWindow::openImage() {
 
     if (dialog.exec()) {
         filePaths = dialog.selectedFiles();
+        currentImagePath = filePaths.at(0);
         showImage(filePaths.at(0));
     }
 }
@@ -239,46 +245,39 @@ void MainWindow::rotateImage() {
         return;
     }
 
-    currentAngle += 45.0;
+    currentAngle += 90.0;
     if (currentAngle >= 360.0) {
-        currentAngle -= 360.0;
+        currentAngle -= 270.0;
     }
+    qDebug() << currentAngle;
 
-    cv::Mat mat = cv::imread(currentImagePath.toUtf8().constData(), cv::IMREAD_COLOR);
-    if (mat.empty()) {
+    if (editedImage.empty()) {
         QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
         QMessageBox::warning(this, "Error", message);
         return;
     }
 
     double scale = 1.0;
-    cv::Point2f center = cv::Point(mat.cols / 2.0, mat.rows / 2.0);
+    cv::Point2f center = cv::Point(editedImage.cols / 2.0, editedImage.rows / 2.0);
     cv::Mat rotateMatrix = cv::getRotationMatrix2D(center, currentAngle, scale);
 
-    cv::Rect2f boundingBox = cv::RotatedRect(cv::Point2f(), mat.size(), currentAngle).boundingRect2f();
-    rotateMatrix.at<double>(0, 2) += boundingBox.width / 2.0 - mat.cols / 2.0;
-    rotateMatrix.at<double>(1, 2) += boundingBox.height / 2.0 - mat.rows / 2.0;
+    cv::Rect2f boundingBox = cv::RotatedRect(cv::Point2f(), editedImage.size(), currentAngle).boundingRect2f();
+    rotateMatrix.at<double>(0, 2) += boundingBox.width / 2.0 - editedImage.cols / 2.0;
+    rotateMatrix.at<double>(1, 2) += boundingBox.height / 2.0 - editedImage.rows / 2.0;
 
     cv::Mat result;
-    cv::warpAffine(mat, result, rotateMatrix, boundingBox.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
+    cv::warpAffine(editedImage, result, rotateMatrix, boundingBox.size(), cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
+    editedImage = result.clone();
+
     QPixmap pixmap = Helper::CvMatToQPixmap(result);
 
-    imageScene->clear();
-    imageView->resetTransform();
-    currentImage = imageScene->addPixmap(pixmap);
-    imageScene->update();
-    imageView->setSceneRect(pixmap.rect());
+    UpdateView(pixmap);
 
     QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
     imageStatusLabel->setText(status);
 }
 
 void MainWindow::resizeImage() {
-    if (currentImage == nullptr) {
-        QMessageBox::warning(this, "Warning", "No image to edit.");
-        return;
-    }
-
     bool okWidth, okHeight;
     int width = QInputDialog::getInt(this, "Resize Image", "Enter new width:", 25, 1, 10000, 1, &okWidth);
     if (!okWidth) return;
@@ -286,48 +285,37 @@ void MainWindow::resizeImage() {
     int height = QInputDialog::getInt(this, "Resize Image", "Enter new height:", 25, 1, 10000, 1, &okHeight);
     if (!okHeight) return;
 
-    cv::Mat mat = cv::imread(currentImagePath.toUtf8().constData(), cv::IMREAD_COLOR);
-    if (mat.empty()) {
+    if (editedImage.empty()) {
         QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
         QMessageBox::warning(this, "Error", message);
         return;
     }
 
     cv::Mat destImage;
-    cv::resize(mat, destImage, cv::Size(width, height));
-
+    cv::resize(editedImage, destImage, cv::Size(width, height));
     QPixmap pixmap = Helper::CvMatToQPixmap(destImage);
 
-    imageScene->clear();
-    imageView->resetTransform();
-    currentImage = imageScene->addPixmap(pixmap);
-    imageScene->update();
-    imageView->setSceneRect(pixmap.rect());
+    editedImage = destImage;
+
+    UpdateView(pixmap);
+
     QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
     imageStatusLabel->setText(status);
 }
 
 void MainWindow::cropImage() {
-    if (currentImage == nullptr) {
-        QMessageBox::information(this, "Information", "No image to crop.");
-        return;
-    }
-
-    // Get Cropped Area
     QRect selection = imageView->getSelectionRect();
     if (selection.isNull() || selection.width() == 0 || selection.height() == 0) {
         QMessageBox::information(this, "Information", "No selection made for cropping.");
         return;
     }
 
-    // Crop Image
-    QPixmap originalPixmap = currentImage->pixmap();
-    QPixmap croppedPixmap = originalPixmap.copy(selection);
+    cv::Rect roi(selection.x(), selection.y(), selection.width(), selection.height());
+    cv::Mat croppedMat = editedImage(roi).clone();
+    editedImage = croppedMat;
+    QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
+    UpdateView(pixmap);
 
-    imageScene->clear();
-    currentImage = imageScene->addPixmap(croppedPixmap);
-    imageScene->update();
-    imageView->setSceneRect(croppedPixmap.rect());
-    QString status = QString("(eddited image), %1x%2").arg(croppedPixmap.width()).arg(croppedPixmap.height());
+    QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
     imageStatusLabel->setText(status);
 }
