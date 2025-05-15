@@ -311,7 +311,7 @@ void MainWindow::rotateImage() {
     rotateMatrix.at<double>(1, 2) += boundingBox.height / 2.0 - mat.rows / 2.0;
 
     cv::Mat result;
-    cv::warpAffine(mat, result, rotateMatrix, boundingBox.size(), 1, 0, cv::Scalar(255, 255, 255));
+    cv::warpAffine(mat, result, rotateMatrix, boundingBox.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
     QPixmap pixmap = CvMatToQpixmap(result);
 
     imageScene->clear();
