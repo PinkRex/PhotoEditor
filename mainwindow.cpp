@@ -10,56 +10,6 @@ MainWindow::MainWindow(QWidget *parent)
     currentImage = nullptr;
 }
 
-class CustomGraphicsView : public QGraphicsView {
-public:
-    explicit CustomGraphicsView(QWidget *parent = nullptr) : QGraphicsView(parent), selecting(false) {}
-
-    QRect getSelectionRect() const {
-        return mapToScene(selectionRect).boundingRect().toRect();
-    }
-
-protected:
-    void mousePressEvent(QMouseEvent *event) override {
-        if (event->button() == Qt::LeftButton) {
-            origin = event->pos();
-            selectionRect = QRect();
-            selecting = true;
-            viewport()->update();
-        }
-        QGraphicsView::mousePressEvent(event);
-    }
-
-    void mouseMoveEvent(QMouseEvent *event) override {
-        if (selecting) {
-            selectionRect = QRect(origin, event->pos()).normalized();
-            viewport()->update();
-        }
-        QGraphicsView::mouseMoveEvent(event);
-    }
-
-    void mouseReleaseEvent(QMouseEvent *event) override {
-        if (event->button() == Qt::LeftButton && selecting) {
-            selecting = false;
-            viewport()->update();
-        }
-        QGraphicsView::mouseReleaseEvent(event);
-    }
-
-    void drawForeground(QPainter *painter, const QRectF &rect) override {
-        Q_UNUSED(rect);
-        if (!selectionRect.isNull()) {
-            painter->setPen(QPen(Qt::red, 2));
-            painter->drawRect(mapToScene(selectionRect).boundingRect());
-        }
-    }
-
-private:
-    QPoint origin;
-    QRect selectionRect;
-    bool selecting;
-};
-
-
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -72,10 +22,6 @@ void MainWindow::initUI(){
     fileMenu = menuBar()->addMenu("&File");
     viewMenu = menuBar()->addMenu("&View");
     editMenu = menuBar()->addMenu("&Edit");
-
-    // TODO: Add change resource EN <-> VN
-    settingMenu = menuBar()->addMenu("&Setting");
-
     helpMenu = menuBar()->addMenu("&Help");
 
     // Init Toolbar
@@ -286,24 +232,6 @@ void MainWindow::about() {
     msgBox.setText(text);
     msgBox.exec();
 }
-
-// QPixmap CvMatToQpixmap(cv::Mat matImage) {
-//     QImage image_edited;
-
-//     if (matImage.channels() == 4) {
-//         cv::cvtColor(matImage, matImage, cv::COLOR_BGRA2RGBA);
-//         image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_RGBA8888).copy();
-//     } else if (matImage.channels() == 3) {
-//         cv::cvtColor(matImage, matImage, cv::COLOR_BGR2RGB);
-//         image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_RGB888).copy();
-//     } else if (matImage.channels() == 1) {
-//         image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_Grayscale8).copy();
-//     } else {
-//         image_edited = QImage();
-//     }
-
-//     return QPixmap::fromImage(image_edited);
-// }
 
 void MainWindow::rotateImage() {
     if (currentImage == nullptr) {
