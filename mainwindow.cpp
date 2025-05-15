@@ -9,6 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
     initUI();
     currentImage = nullptr;
     qDebug() << CV_VERSION;
+    qDebug() << currentAngle;
 }
 
 MainWindow::~MainWindow()
@@ -241,55 +242,84 @@ void MainWindow::about() {
     msgBox.exec();
 }
 
+// QPixmap CvMatToQpixmap(cv::Mat matImage) {
+//     if (matImage.type() == CV_8UC4) {
+//         qDebug() << "Image Type is: 32 bit";
+//         QImage image_edited(matImage.data, matImage.cols, matImage.rows, static_cast<int>(matImage.step), QImage::Format_RGB888);
+//         return QPixmap::fromImage(image_edited.rgbSwapped());
+//     } else if (matImage.type() == CV_8UC3) {
+//         qDebug() << "Image Type is: 24 bit";
+//         QImage image_edited(matImage.data, matImage.cols, matImage.rows, static_cast<int>(matImage.step), QImage::Format_RGB888);
+//         return QPixmap::fromImage(image_edited.rgbSwapped());
+//     } else if (matImage.type() == CV_8UC1) {
+//         qDebug() << "Image Type is: 8 bit";
+//         QImage image_edited(matImage.data, matImage.cols, matImage.rows, static_cast<int>(matImage.step), QImage::Format_Grayscale8);
+//         return QPixmap::fromImage(image_edited);
+//     } else if (matImage.type() == CV_8UC2) {
+//         qDebug() << "Image Type is: 16 bit";
+//         QImage image_edited(matImage.data, matImage.cols, matImage.rows, static_cast<int>(matImage.step), QImage::Format_Grayscale16);
+//         return QPixmap::fromImage(image_edited);
+//     }
+
+//     QImage image_edited(matImage.data, matImage.cols, matImage.rows, static_cast<int>(matImage.step), QImage::Format_RGB888);
+//     return QPixmap::fromImage(image_edited.rgbSwapped());
+// }
+
+QPixmap CvMatToQpixmap(cv::Mat matImage) {
+    QImage image_edited;
+
+    if (matImage.channels() == 4) {
+        cv::cvtColor(matImage, matImage, cv::COLOR_BGRA2RGBA);
+        image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_RGBA8888).copy();
+    } else if (matImage.channels() == 3) {
+        cv::cvtColor(matImage, matImage, cv::COLOR_BGR2RGB);
+        image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_RGB888).copy();
+    } else if (matImage.channels() == 1) {
+        image_edited = QImage(matImage.data, matImage.cols, matImage.rows, matImage.step, QImage::Format_Grayscale8).copy();
+    } else {
+        image_edited = QImage();
+    }
+
+    return QPixmap::fromImage(image_edited);
+}
+
+
 void MainWindow::rotateImage() {
-    // if (currentImage == nullptr) {
-    //     QMessageBox::information(this, "Information", "No image to edit.");
-    //     return;
-    // }
+    if (currentImage == nullptr) {
+        QMessageBox::information(this, "Information", "No image to edit.");
+        return;
+    }
 
-    // QPixmap pixmap = currentImage->pixmap();
-    // QImage image = pixmap.toImage();
-    // image = image.convertToFormat(QImage::Format_RGB888);
+    currentAngle += 45.0;
+    if (currentAngle >= 360.0) {
+        currentAngle -= 360.0;
+    }
 
-    // cv::Mat mat = cv::Mat(image.height(), image.width(), CV_8UC3, image.bits(), image.bytesPerLine());
+    cv::Mat mat = cv::imread(currentImagePath.toUtf8().constData(), cv::IMREAD_COLOR);
+    if (mat.empty()) {
+        QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
+        QMessageBox::warning(this, "Error", message);
+        return;
+    }
 
-    // double angle = 45.0;
-    // double scale = 1.0;
-    // cv::Point2f center = cv::Point(mat.cols/2, mat.rows/2);
-    // cv::Mat rotateMatrix = cv::getRotationMatrix2D(center, angle, scale);
-    // cv::Mat result;
-    // cv::warpAffine(mat, result, rotateMatrix, mat.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT);
+    double scale = 1.0;
+    cv::Point2f center = cv::Point(mat.cols / 2.0, mat.rows / 2.0);
+    cv::Mat rotateMatrix = cv::getRotationMatrix2D(center, currentAngle, scale);
 
-    // QImage image_edited(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_RGB888);
-    // pixmap = QPixmap::fromImage(image_edited);
-    // imageScene->clear();
-    // imageView->resetTransform();
-    // currentImage = imageScene->addPixmap(pixmap);
-    // imageScene->update();
-    // imageView->setSceneRect(pixmap.rect());
-    // QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
-    // imageStatusLabel->setText(status);
+    cv::Rect2f boundingBox = cv::RotatedRect(cv::Point2f(), mat.size(), currentAngle).boundingRect2f();
+    rotateMatrix.at<double>(0, 2) += boundingBox.width / 2.0 - mat.cols / 2.0;
+    rotateMatrix.at<double>(1, 2) += boundingBox.height / 2.0 - mat.rows / 2.0;
 
+    cv::Mat result;
+    cv::warpAffine(mat, result, rotateMatrix, boundingBox.size(), 1, 0, cv::Scalar(255, 255, 255));
+    QPixmap pixmap = CvMatToQpixmap(result);
 
+    imageScene->clear();
+    imageView->resetTransform();
+    currentImage = imageScene->addPixmap(pixmap);
+    imageScene->update();
+    imageView->setSceneRect(pixmap.rect());
 
-        if(currentImage == nullptr) {
-            QMessageBox::information(this, "Information", "No image to edit.");
-            return;
-        }
-        QPixmap pixmap = currentImage->pixmap();
-        QImage image = pixmap.toImage();
-        image = image.convertToFormat(QImage::Format_RGB888);
-        cv::Mat mat = cv::Mat(image.height(), image.width(), CV_8UC3, image.bits(), image.bytesPerLine());
-        cv::Mat tmp;
-        cv::blur(mat, tmp, cv::Size(8, 8));
-        mat = tmp;
-        QImage image_blurred(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_RGB888);
-        pixmap = QPixmap::fromImage(image_blurred);
-        imageScene->clear();
-        imageView->resetTransform();
-        currentImage = imageScene->addPixmap(pixmap);
-        imageScene->update();
-        imageView->setSceneRect(pixmap.rect());
-        QString status = QString("(editted image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
-        imageStatusLabel->setText(status);
+    QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
+    imageStatusLabel->setText(status);
 }

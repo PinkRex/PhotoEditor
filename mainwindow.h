@@ -18,6 +18,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgcodecs/imgcodecs.hpp>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -79,5 +80,6 @@ private:
     QAction *nextImageAction;
     QAction *rotateImageAction;
     QAction *aboutAction;
+    double currentAngle = 0.0;
 };
 #endif // MAINWINDOW_H
