@@ -1,7 +1,9 @@
 #include "imageview.h"
 
 ImageView::ImageView(QWidget *parent)
-    : QGraphicsView(parent) {}
+    : QGraphicsView(parent) {
+    setAcceptDrops(true);
+}
 
 QRect ImageView::getSelectionRect() const {
     return mapToScene(selectionRect).boundingRect().toRect();
@@ -38,5 +40,35 @@ void ImageView::drawForeground(QPainter *painter, const QRectF &rect) {
     if (!selectionRect.isNull()) {
         painter->setPen(QPen(Qt::red, 2));
         painter->drawRect(mapToScene(selectionRect).boundingRect());
+    }
+}
+
+void ImageView::dragEnterEvent(QDragEnterEvent *event) {
+    if (event->mimeData()->hasUrls()) {
+        QList<QUrl> urlList = event->mimeData()->urls();
+        if (urlList.size() == 1) {
+            QString fileName = urlList.at(0).toLocalFile();
+            QImageReader reader(fileName);
+            if (reader.canRead()) {
+                event->acceptProposedAction();
+            }
+        }
+    }
+}
+
+void ImageView::dragLeaveEvent(QDragLeaveEvent *event) {
+    event->accept();
+}
+
+void ImageView::dragMoveEvent(QDragMoveEvent *event) {
+    event->accept();
+    event->acceptProposedAction();
+}
+
+void ImageView::dropEvent(QDropEvent *event) {
+    QList<QUrl> urlList = event->mimeData()->urls();
+    if (!urlList.isEmpty()) {
+        QString filePath = urlList.first().toLocalFile();
+        emit imageDropped(filePath);
     }
 }

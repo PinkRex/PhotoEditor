@@ -35,6 +35,7 @@ void MainWindow::InitUI(){
     imageView = new ImageView(this);
     imageView->setScene(imageScene);
     setCentralWidget(imageView);
+    connect(imageView, &ImageView::imageDropped, this, &MainWindow::ShowImage);
 
     // Init Image Information Display
     imageStatusBar = statusBar();
@@ -106,9 +107,9 @@ void MainWindow::CreateActions() {
     previousImageAction = new QAction("&Previous Image", this);
     nextImageAction = new QAction("&Next Image", this);
     aboutAction = new QAction("&About", this);
-    rotateImageAction = new QAction("&Rotate Image", this);
-    resizeImageAction = new QAction("&Resize Image", this);
-    cropImageAction = new QAction("&Crop Image", this);
+    rotateImageAction = new QAction("&Rotate", this);
+    resizeImageAction = new QAction("&Resize", this);
+    cropImageAction = new QAction("&Crop", this);
 
     connect(exitAction, SIGNAL(triggered(bool)), QApplication::instance(), SLOT(quit()));
     connect(openAction, SIGNAL(triggered(bool)), this, SLOT(OpenImage()));
