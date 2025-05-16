@@ -5,11 +5,25 @@ ImageView::ImageView(QWidget *parent)
     setAcceptDrops(true);
 }
 
+void ImageView::setCroppingMode(bool enabled) {
+    croppingMode = enabled;
+    if (!enabled) {
+        selectionRect = QRect();
+        selecting = false;
+        viewport()->update();
+    }
+}
+
 QRect ImageView::getSelectionRect() const {
     return mapToScene(selectionRect).boundingRect().toRect();
 }
 
 void ImageView::mousePressEvent(QMouseEvent *event) {
+    if (!croppingMode) {
+        QGraphicsView::mousePressEvent(event);
+        return;
+    }
+
     if (event->button() == Qt::LeftButton) {
         origin = event->pos();
         selectionRect = QRect();
@@ -20,6 +34,11 @@ void ImageView::mousePressEvent(QMouseEvent *event) {
 }
 
 void ImageView::mouseMoveEvent(QMouseEvent *event) {
+    if (!croppingMode) {
+        QGraphicsView::mousePressEvent(event);
+        return;
+    }
+
     if (selecting) {
         selectionRect = QRect(origin, event->pos()).normalized();
         viewport()->update();
@@ -28,6 +47,11 @@ void ImageView::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void ImageView::mouseReleaseEvent(QMouseEvent *event) {
+    if (!croppingMode) {
+        QGraphicsView::mousePressEvent(event);
+        return;
+    }
+
     if (event->button() == Qt::LeftButton && selecting) {
         selecting = false;
         viewport()->update();

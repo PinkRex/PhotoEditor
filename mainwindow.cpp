@@ -298,6 +298,11 @@ void MainWindow::RotateImage() {
 }
 
 void MainWindow::ResizeImage() {
+    if (currentImage == nullptr) {
+        QMessageBox::information(this, "Information", "No image to edit.");
+        return;
+    }
+
     bool okWidth, okHeight;
     int width = QInputDialog::getInt(this, "Resize Image", "Enter new width:", 25, 1, 10000, 1, &okWidth);
     if (!okWidth) return;
@@ -320,11 +325,31 @@ void MainWindow::ResizeImage() {
 }
 
 void MainWindow::CropImage() {
+    if (currentImage == nullptr) {
+        QMessageBox::information(this, "Information", "No image to edit.");
+        return;
+    }
+
+    if (!croppingMode) {
+        croppingMode = true;
+        hasSelection = false;
+        imageView->setCroppingMode(croppingMode);
+        QString status = QString("Draw a selection rectangle to crop.");
+        imageStatusLabel->setText(status);
+        return;
+    }
+
     QRect selection = imageView->getSelectionRect();
     if (selection.isNull() || selection.width() == 0 || selection.height() == 0) {
         QMessageBox::information(this, "Information", "No selection made for cropping.");
+        croppingMode = false;
+        hasSelection = false;
+        imageView->setCroppingMode(croppingMode);
+        return;
         return;
     }
+
+    hasSelection = true;
 
     cv::Rect roi(selection.x(), selection.y(), selection.width(), selection.height());
     cv::Mat croppedMat = editedImage(roi).clone();
@@ -332,6 +357,10 @@ void MainWindow::CropImage() {
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
 
     UpdateView(pixmap);
+
+    croppingMode = false;
+    hasSelection = false;
+    imageView->setCroppingMode(croppingMode);
 }
 
 void MainWindow::PluginPerform() {

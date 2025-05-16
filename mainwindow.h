@@ -40,6 +40,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    ImageView* GetImageView();
 
 private:
     Ui::MainWindow *ui;
@@ -100,5 +101,7 @@ private:
     double currentAngle = 0.0;
     cv::Mat originalImage;
     cv::Mat editedImage;
+    bool croppingMode = false;
+    bool hasSelection = false;
 };
 #endif // MAINWINDOW_H
