@@ -6,8 +6,9 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    initUI();
+    InitUI();
     currentImage = nullptr;
+    LoadPlugins();
 }
 
 MainWindow::~MainWindow()
@@ -15,7 +16,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::initUI(){
+void MainWindow::InitUI(){
     this->resize(800, 600);
 
     // Init Menubar
@@ -60,7 +61,7 @@ void MainWindow::initUI(){
     layout->addWidget(rightSpacer);
     imageStatusBar->addPermanentWidget(container, 1);
 
-    createActions();
+    CreateActions();
 
     // Group File menu & File toolbar
     fileMenu->addAction(openAction);
@@ -86,6 +87,7 @@ void MainWindow::initUI(){
     editMenu->addAction(rotateImageAction);
     editMenu->addAction(resizeImageAction);
     editMenu->addAction(cropImageAction);
+    editMenu->addSeparator();
 
     editToolBar->addAction(rotateImageAction);
     editToolBar->addAction(resizeImageAction);
@@ -95,7 +97,7 @@ void MainWindow::initUI(){
     helpMenu->addAction(aboutAction);
 }
 
-void MainWindow::createActions() {
+void MainWindow::CreateActions() {
     openAction = new QAction("&Open", this);
     saveAsAction = new QAction("&Save As", this);
     exitAction = new QAction("&Exit", this);
@@ -109,16 +111,16 @@ void MainWindow::createActions() {
     cropImageAction = new QAction("&Crop Image", this);
 
     connect(exitAction, SIGNAL(triggered(bool)), QApplication::instance(), SLOT(quit()));
-    connect(openAction, SIGNAL(triggered(bool)), this, SLOT(openImage()));
-    connect(saveAsAction, SIGNAL(triggered(bool)), this, SLOT(saveImageAs()));
-    connect(zoomInAction, SIGNAL(triggered(bool)), this, SLOT(zoomInImage()));
-    connect(zoomOutAction, SIGNAL(triggered(bool)), this, SLOT(zoomOutImage()));
-    connect(previousImageAction, SIGNAL(triggered(bool)), this, SLOT(previousImage()));
-    connect(nextImageAction, SIGNAL(triggered(bool)), this, SLOT(nextImage()));
-    connect(aboutAction, SIGNAL(triggered(bool)), this, SLOT(about()));
-    connect(rotateImageAction, SIGNAL(triggered(bool)), this, SLOT(rotateImage()));
-    connect(resizeImageAction, SIGNAL(triggered(bool)), this, SLOT(resizeImage()));
-    connect(cropImageAction, &QAction::triggered, this, &MainWindow::cropImage);
+    connect(openAction, SIGNAL(triggered(bool)), this, SLOT(OpenImage()));
+    connect(saveAsAction, SIGNAL(triggered(bool)), this, SLOT(SaveImageAs()));
+    connect(zoomInAction, SIGNAL(triggered(bool)), this, SLOT(ZoomInImage()));
+    connect(zoomOutAction, SIGNAL(triggered(bool)), this, SLOT(ZoomOutImage()));
+    connect(previousImageAction, SIGNAL(triggered(bool)), this, SLOT(PreviousImage()));
+    connect(nextImageAction, SIGNAL(triggered(bool)), this, SLOT(NextImage()));
+    connect(aboutAction, SIGNAL(triggered(bool)), this, SLOT(About()));
+    connect(rotateImageAction, SIGNAL(triggered(bool)), this, SLOT(RotateImage()));
+    connect(resizeImageAction, SIGNAL(triggered(bool)), this, SLOT(ResizeImage()));
+    connect(cropImageAction, SIGNAL(triggered(bool)), this, SLOT(CropImage()));
 }
 
 void MainWindow::UpdateView(QPixmap pixmap) {
@@ -127,11 +129,34 @@ void MainWindow::UpdateView(QPixmap pixmap) {
     currentImage = imageScene->addPixmap(pixmap);
     imageScene->update();
     imageView->setSceneRect(pixmap.rect());
+    QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
+    imageStatusLabel->setText(status);
 }
 
-void MainWindow::showImage(QString path) {
+void MainWindow::LoadPlugins() {
+    QDir pluginsDir(QApplication::instance()->applicationDirPath() + "/plugins");
+    QStringList nameFilters;
+    nameFilters << "*.dll";
+    QFileInfoList plugins = pluginsDir.entryInfoList(nameFilters, QDir::NoDotAndDotDot | QDir::Files, QDir::Name);
+    foreach(QFileInfo plugin, plugins) {
+        QPluginLoader pluginLoader(plugin.absoluteFilePath(), this);
+        PhotoEditorPluginInterface *plugin_ptr = dynamic_cast<PhotoEditorPluginInterface*>(pluginLoader.instance());
+        if(plugin_ptr) {
+            QAction *action = new QAction(plugin_ptr->name());
+            editMenu->addAction(action);
+            editToolBar->addAction(action);
+            editPlugins[plugin_ptr->name()] = plugin_ptr;
+            connect(action, SIGNAL(triggered(bool)), this, SLOT(PluginPerform()));
+        } else {
+            qDebug() << "bad plugin: " << plugin.absoluteFilePath();
+        }
+    }
+}
+
+void MainWindow::ShowImage(QString path) {
     originalImage = cv::imread(path.toUtf8().constData(), cv::IMREAD_COLOR);
     editedImage = originalImage.clone();
+    currentImagePath = path;
 
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
     UpdateView(pixmap);
@@ -143,7 +168,7 @@ void MainWindow::showImage(QString path) {
     imageStatusLabel->setText(status);
 }
 
-void MainWindow::openImage() {
+void MainWindow::OpenImage() {
     QFileDialog dialog(this);
     dialog.setWindowTitle("Open Image");
 
@@ -153,12 +178,11 @@ void MainWindow::openImage() {
 
     if (dialog.exec()) {
         filePaths = dialog.selectedFiles();
-        currentImagePath = filePaths.at(0);
-        showImage(filePaths.at(0));
+        ShowImage(filePaths.at(0));
     }
 }
 
-void MainWindow::saveImageAs() {
+void MainWindow::SaveImageAs() {
     if (currentImage == nullptr) {
         QMessageBox::information(this, "Information", "Nothing to save!");
         return;
@@ -185,15 +209,15 @@ void MainWindow::saveImageAs() {
     }
 }
 
-void MainWindow::zoomInImage() {
+void MainWindow::ZoomInImage() {
     imageView->scale(1.2, 1.2);
 }
 
-void MainWindow::zoomOutImage() {
+void MainWindow::ZoomOutImage() {
     imageView->scale(0.8, 0.8);
 }
 
-void MainWindow::previousImage() {
+void MainWindow::PreviousImage() {
     QFileInfo current(currentImagePath);
     QDir dir = current.absoluteDir();
 
@@ -202,13 +226,13 @@ void MainWindow::previousImage() {
     QStringList fileNames = dir.entryList(extensionFilters, QDir::Files, QDir::Name);
     int index = fileNames.indexOf(QRegularExpression(QRegularExpression::escape(current.fileName())));
     if (index > 0) {
-        showImage(dir.absoluteFilePath(fileNames.at(index - 1)));
+        ShowImage(dir.absoluteFilePath(fileNames.at(index - 1)));
     } else {
         QMessageBox::information(this, "Navigation", "This is the first image in the folder. There are no previous images to display.");
     }
 }
 
-void MainWindow::nextImage() {
+void MainWindow::NextImage() {
     QFileInfo current(currentImagePath);
     QDir dir = current.absoluteDir();
 
@@ -217,13 +241,13 @@ void MainWindow::nextImage() {
     QStringList fileNames = dir.entryList(extensionFilters, QDir::Files, QDir::Name);
     int index = fileNames.indexOf(QRegularExpression(QRegularExpression::escape(current.fileName())));
     if (index < fileNames.length() - 1) {
-        showImage(dir.absoluteFilePath(fileNames.at(index + 1)));
+        ShowImage(dir.absoluteFilePath(fileNames.at(index + 1)));
     } else {
         QMessageBox::information(this, "Navigation", "This is the last image in the folder. There are no more images to display.");
     }
 }
 
-void MainWindow::about() {
+void MainWindow::About() {
     QMessageBox msgBox(this);
     msgBox.setWindowTitle("About");
 
@@ -239,7 +263,7 @@ void MainWindow::about() {
     msgBox.exec();
 }
 
-void MainWindow::rotateImage() {
+void MainWindow::RotateImage() {
     if (currentImage == nullptr) {
         QMessageBox::information(this, "Information", "No image to edit.");
         return;
@@ -249,7 +273,6 @@ void MainWindow::rotateImage() {
     if (currentAngle >= 360.0) {
         currentAngle -= 270.0;
     }
-    qDebug() << currentAngle;
 
     if (editedImage.empty()) {
         QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
@@ -268,16 +291,12 @@ void MainWindow::rotateImage() {
     cv::Mat result;
     cv::warpAffine(editedImage, result, rotateMatrix, boundingBox.size(), cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
     editedImage = result.clone();
-
     QPixmap pixmap = Helper::CvMatToQPixmap(result);
 
     UpdateView(pixmap);
-
-    QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
-    imageStatusLabel->setText(status);
 }
 
-void MainWindow::resizeImage() {
+void MainWindow::ResizeImage() {
     bool okWidth, okHeight;
     int width = QInputDialog::getInt(this, "Resize Image", "Enter new width:", 25, 1, 10000, 1, &okWidth);
     if (!okWidth) return;
@@ -294,16 +313,12 @@ void MainWindow::resizeImage() {
     cv::Mat destImage;
     cv::resize(editedImage, destImage, cv::Size(width, height));
     QPixmap pixmap = Helper::CvMatToQPixmap(destImage);
-
     editedImage = destImage;
 
     UpdateView(pixmap);
-
-    QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
-    imageStatusLabel->setText(status);
 }
 
-void MainWindow::cropImage() {
+void MainWindow::CropImage() {
     QRect selection = imageView->getSelectionRect();
     if (selection.isNull() || selection.width() == 0 || selection.height() == 0) {
         QMessageBox::information(this, "Information", "No selection made for cropping.");
@@ -314,8 +329,31 @@ void MainWindow::cropImage() {
     cv::Mat croppedMat = editedImage(roi).clone();
     editedImage = croppedMat;
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
-    UpdateView(pixmap);
 
-    QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
-    imageStatusLabel->setText(status);
+    UpdateView(pixmap);
+}
+
+void MainWindow::PluginPerform() {
+    if(currentImage == nullptr) {
+        QMessageBox::information(this, "Information", "No image to edit.");
+        return;
+    }
+
+    if (editedImage.empty()) {
+        QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
+        QMessageBox::warning(this, "Error", message);
+        return;
+    }
+
+    QAction *active_action = qobject_cast<QAction*>(sender());
+    PhotoEditorPluginInterface *plugin_ptr = editPlugins[active_action->text()];
+    if(!plugin_ptr) {
+        QMessageBox::information(this, "Information", "No plugin is found.");
+        return;
+    }
+
+    plugin_ptr->edit(editedImage, editedImage);
+    QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
+
+    UpdateView(pixmap);
 }

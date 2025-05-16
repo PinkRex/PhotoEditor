@@ -17,6 +17,7 @@ SOURCES += \
 HEADERS += \
     Helper.h \
     ImageView.h \
+    PhotoEditorPluginInterface.h \
     mainwindow.h
 
 FORMS += \

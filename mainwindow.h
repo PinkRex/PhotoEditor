@@ -19,6 +19,9 @@
 #include <QMouseEvent>
 #include <ImageView.h>
 #include <Helper.h>
+#include <QPluginLoader>
+#include <QMap>
+#include <PhotoEditorPluginInterface.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -40,22 +43,24 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    void initUI();
-    void createActions();
-    void showImage(QString path);
+    void InitUI();
+    void CreateActions();
+    void ShowImage(QString path);
     void UpdateView(QPixmap pixmap);
+    void LoadPlugins();
 
 private slots:
-    void openImage();
-    void saveImageAs();
-    void zoomInImage();
-    void zoomOutImage();
-    void previousImage();
-    void nextImage();
-    void about();
-    void rotateImage();
-    void resizeImage();
-    void cropImage();
+    void OpenImage();
+    void SaveImageAs();
+    void ZoomInImage();
+    void ZoomOutImage();
+    void PreviousImage();
+    void NextImage();
+    void About();
+    void RotateImage();
+    void ResizeImage();
+    void CropImage();
+    void PluginPerform();
 
 private:
     QMenu *fileMenu;
@@ -89,6 +94,8 @@ private:
     QAction *rotateImageAction;
     QAction *resizeImageAction;
     QAction *cropImageAction;
+
+    QMap<QString, PhotoEditorPluginInterface*> editPlugins;
 
     double currentAngle = 0.0;
     cv::Mat originalImage;
