@@ -14,7 +14,7 @@ class ImageView : public QGraphicsView {
 public:
     explicit ImageView(QWidget *parent = nullptr);
     QRect getSelectionRect() const;
-    void setCroppingMode(bool enabled);
+    void toggleDrawingMode(bool enabled);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -31,7 +31,7 @@ private:
     QPoint origin;
     QRect selectionRect;
     bool selecting = false;
-    bool croppingMode = false;
+    bool drawingMode = false;
 
 signals:
     void imageDropped(const QString &filePath);

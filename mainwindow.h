@@ -49,6 +49,7 @@ private:
     void ShowImage(QString path);
     void UpdateView(QPixmap pixmap);
     void LoadPlugins();
+    bool CheckImageValid();
 
 private slots:
     void OpenImage();

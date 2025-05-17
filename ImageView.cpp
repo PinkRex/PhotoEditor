@@ -5,8 +5,8 @@ ImageView::ImageView(QWidget *parent)
     setAcceptDrops(true);
 }
 
-void ImageView::setCroppingMode(bool enabled) {
-    croppingMode = enabled;
+void ImageView::toggleDrawingMode(bool enabled) {
+    drawingMode = enabled;
     if (!enabled) {
         selectionRect = QRect();
         selecting = false;
@@ -14,12 +14,17 @@ void ImageView::setCroppingMode(bool enabled) {
     }
 }
 
+// Return the selected area
 QRect ImageView::getSelectionRect() const {
     return mapToScene(selectionRect).boundingRect().toRect();
 }
 
+//======================================================//
+// Handle draw the box outline
+//======================================================//
+
 void ImageView::mousePressEvent(QMouseEvent *event) {
-    if (!croppingMode) {
+    if (!drawingMode) {
         QGraphicsView::mousePressEvent(event);
         return;
     }
@@ -34,7 +39,7 @@ void ImageView::mousePressEvent(QMouseEvent *event) {
 }
 
 void ImageView::mouseMoveEvent(QMouseEvent *event) {
-    if (!croppingMode) {
+    if (!drawingMode) {
         QGraphicsView::mousePressEvent(event);
         return;
     }
@@ -47,7 +52,7 @@ void ImageView::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void ImageView::mouseReleaseEvent(QMouseEvent *event) {
-    if (!croppingMode) {
+    if (!drawingMode) {
         QGraphicsView::mousePressEvent(event);
         return;
     }
@@ -66,6 +71,10 @@ void ImageView::drawForeground(QPainter *painter, const QRectF &rect) {
         painter->drawRect(mapToScene(selectionRect).boundingRect());
     }
 }
+
+//======================================================//
+// Handle Drag and Drop
+//======================================================//
 
 void ImageView::dragEnterEvent(QDragEnterEvent *event) {
     if (event->mimeData()->hasUrls()) {

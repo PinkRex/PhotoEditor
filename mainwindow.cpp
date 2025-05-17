@@ -161,11 +161,7 @@ void MainWindow::ShowImage(QString path) {
 
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
     UpdateView(pixmap);
-    QString status = QString("%1, %2x%3, %4 Bytes")
-                         .arg(path)
-                         .arg(pixmap.width())
-                         .arg(pixmap.height())
-                         .arg(QFile(path).size());
+    QString status = QString("%1, %2x%3, %4 Bytes").arg(path).arg(pixmap.width()).arg(pixmap.height()).arg(QFile(path).size());
     imageStatusLabel->setText(status);
 }
 
@@ -264,21 +260,29 @@ void MainWindow::About() {
     msgBox.exec();
 }
 
-void MainWindow::RotateImage() {
+bool MainWindow::CheckImageValid() {
     if (currentImage == nullptr) {
         QMessageBox::information(this, "Information", "No image to edit.");
+        return false;
+    }
+
+    if (editedImage.empty()) {
+        QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
+        QMessageBox::warning(this, "Error", message);
+        return false;
+    }
+
+    return true;
+}
+
+void MainWindow::RotateImage() {
+    if (!CheckImageValid()) {
         return;
     }
 
     currentAngle += 90.0;
     if (currentAngle >= 360.0) {
         currentAngle -= 270.0;
-    }
-
-    if (editedImage.empty()) {
-        QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
-        QMessageBox::warning(this, "Error", message);
-        return;
     }
 
     double scale = 1.0;
@@ -298,23 +302,17 @@ void MainWindow::RotateImage() {
 }
 
 void MainWindow::ResizeImage() {
-    if (currentImage == nullptr) {
-        QMessageBox::information(this, "Information", "No image to edit.");
+    if (!CheckImageValid()) {
         return;
     }
 
+    QPixmap OriginalPixmap = Helper::CvMatToQPixmap(editedImage);
     bool okWidth, okHeight;
-    int width = QInputDialog::getInt(this, "Resize Image", "Enter new width:", 25, 1, 10000, 1, &okWidth);
+    int width = QInputDialog::getInt(this, "Resize Image", "Enter new width:", OriginalPixmap.width(), 1, 10000, 1, &okWidth);
     if (!okWidth) return;
 
-    int height = QInputDialog::getInt(this, "Resize Image", "Enter new height:", 25, 1, 10000, 1, &okHeight);
+    int height = QInputDialog::getInt(this, "Resize Image", "Enter new height:", OriginalPixmap.height(), 1, 10000, 1, &okHeight);
     if (!okHeight) return;
-
-    if (editedImage.empty()) {
-        QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
-        QMessageBox::warning(this, "Error", message);
-        return;
-    }
 
     cv::Mat destImage;
     cv::resize(editedImage, destImage, cv::Size(width, height));
@@ -325,15 +323,14 @@ void MainWindow::ResizeImage() {
 }
 
 void MainWindow::CropImage() {
-    if (currentImage == nullptr) {
-        QMessageBox::information(this, "Information", "No image to edit.");
+    if (!CheckImageValid()) {
         return;
     }
 
     if (!croppingMode) {
         croppingMode = true;
         hasSelection = false;
-        imageView->setCroppingMode(croppingMode);
+        imageView->toggleDrawingMode(croppingMode);
         QString status = QString("Draw a selection rectangle to crop.");
         imageStatusLabel->setText(status);
         return;
@@ -344,15 +341,25 @@ void MainWindow::CropImage() {
         QMessageBox::information(this, "Information", "No selection made for cropping.");
         croppingMode = false;
         hasSelection = false;
-        imageView->setCroppingMode(croppingMode);
+        imageView->toggleDrawingMode(croppingMode);
         return;
+    }
+
+    int imageWidth = editedImage.cols;
+    int imageHeight = editedImage.rows;
+    if (selection.right() >= imageWidth || selection.bottom() >= imageHeight ||
+        selection.x() < 0 || selection.y() < 0) {
+        QMessageBox::warning(this, "Warning", "Selection area is outside the image bounds.");
+        croppingMode = false;
+        hasSelection = false;
+        imageView->toggleDrawingMode(croppingMode);
         return;
     }
 
     hasSelection = true;
 
-    cv::Rect roi(selection.x(), selection.y(), selection.width(), selection.height());
-    cv::Mat croppedMat = editedImage(roi).clone();
+    cv::Rect croppedArea(selection.x(), selection.y(), selection.width(), selection.height());
+    cv::Mat croppedMat = editedImage(croppedArea).clone();
     editedImage = croppedMat;
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
 
@@ -360,18 +367,11 @@ void MainWindow::CropImage() {
 
     croppingMode = false;
     hasSelection = false;
-    imageView->setCroppingMode(croppingMode);
+    imageView->toggleDrawingMode(croppingMode);
 }
 
 void MainWindow::PluginPerform() {
-    if(currentImage == nullptr) {
-        QMessageBox::information(this, "Information", "No image to edit.");
-        return;
-    }
-
-    if (editedImage.empty()) {
-        QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
-        QMessageBox::warning(this, "Error", message);
+    if (!CheckImageValid()) {
         return;
     }
 
