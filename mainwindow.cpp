@@ -347,8 +347,7 @@ void MainWindow::CropImage() {
 
     int imageWidth = editedImage.cols;
     int imageHeight = editedImage.rows;
-    if (selection.right() >= imageWidth || selection.bottom() >= imageHeight ||
-        selection.x() < 0 || selection.y() < 0) {
+    if (selection.right() >= imageWidth || selection.bottom() >= imageHeight || selection.x() < 0 || selection.y() < 0) {
         QMessageBox::warning(this, "Warning", "Selection area is outside the image bounds.");
         croppingMode = false;
         hasSelection = false;
