@@ -34,6 +34,7 @@ void MainWindow::InitUI(){
     imageScene = new QGraphicsScene(this);
     imageView = new ImageView(this);
     imageView->setScene(imageScene);
+    imageView->setObjectName("imageView");
     setCentralWidget(imageView);
     connect(imageView, &ImageView::imageDropped, this, &MainWindow::ShowImage);
 
@@ -162,6 +163,7 @@ void MainWindow::ShowImage(QString path) {
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
     UpdateView(pixmap);
     QString status = QString("%1, %2x%3, %4 Bytes").arg(path).arg(pixmap.width()).arg(pixmap.height()).arg(QFile(path).size());
+    statusText = status;
     imageStatusLabel->setText(status);
 }
 
@@ -321,6 +323,12 @@ void MainWindow::ResizeImage() {
 
     UpdateView(pixmap);
 }
+void MainWindow::ToggleCropMode(bool mode, bool draw) {
+    croppingMode = mode;
+    hasSelection = draw;
+    imageView->toggleDrawingMode(croppingMode);
+    imageView->setCropMode(croppingMode);
+}
 
 void MainWindow::CropImage() {
     if (!CheckImageValid()) {
@@ -328,9 +336,7 @@ void MainWindow::CropImage() {
     }
 
     if (!croppingMode) {
-        croppingMode = true;
-        hasSelection = false;
-        imageView->toggleDrawingMode(croppingMode);
+        ToggleCropMode(true, false);
         QString status = QString("Draw a selection rectangle to crop.");
         imageStatusLabel->setText(status);
         return;
@@ -339,9 +345,8 @@ void MainWindow::CropImage() {
     QRect selection = imageView->getSelectionRect();
     if (selection.isNull() || selection.width() == 0 || selection.height() == 0) {
         QMessageBox::information(this, "Information", "No selection made for cropping.");
-        croppingMode = false;
-        hasSelection = false;
-        imageView->toggleDrawingMode(croppingMode);
+        ToggleCropMode(false, false);
+        imageStatusLabel->setText(statusText);
         return;
     }
 
@@ -349,24 +354,17 @@ void MainWindow::CropImage() {
     int imageHeight = editedImage.rows;
     if (selection.right() >= imageWidth || selection.bottom() >= imageHeight || selection.x() < 0 || selection.y() < 0) {
         QMessageBox::warning(this, "Warning", "Selection area is outside the image bounds.");
-        croppingMode = false;
-        hasSelection = false;
-        imageView->toggleDrawingMode(croppingMode);
+        ToggleCropMode(false, false);
         return;
     }
-
     hasSelection = true;
 
     cv::Rect croppedArea(selection.x(), selection.y(), selection.width(), selection.height());
     cv::Mat croppedMat = editedImage(croppedArea).clone();
     editedImage = croppedMat;
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
-
     UpdateView(pixmap);
-
-    croppingMode = false;
-    hasSelection = false;
-    imageView->toggleDrawingMode(croppingMode);
+    ToggleCropMode(false, false);
 }
 
 void MainWindow::PluginPerform() {
@@ -381,7 +379,7 @@ void MainWindow::PluginPerform() {
         return;
     }
 
-    plugin_ptr->edit(editedImage, editedImage);
+    plugin_ptr->edit(editedImage, editedImage, this);
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
 
     UpdateView(pixmap);

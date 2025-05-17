@@ -1,4 +1,5 @@
 #pragma once
+#include "public/DrawingInterface.h"
 #include <QGraphicsView>
 #include <QMouseEvent>
 #include <QPainter>
@@ -8,13 +9,16 @@
 #include <QUrl>
 #include <QDebug>
 
-class ImageView : public QGraphicsView {
+class ImageView : public QGraphicsView, public DrawingInterface {
     Q_OBJECT
 
 public:
     explicit ImageView(QWidget *parent = nullptr);
     QRect getSelectionRect() const;
     void toggleDrawingMode(bool enabled);
+    void enableSelectionMode(bool enabled) override;
+    void onSelectionFinished(std::function<void(QRect)> callback) override;
+    void setCropMode(bool enabled);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -32,8 +36,9 @@ private:
     QRect selectionRect;
     bool selecting = false;
     bool drawingMode = false;
+    bool cropMode = false;
 
 signals:
     void imageDropped(const QString &filePath);
-
+    void selectionFinished(const QRect &rect);
 };

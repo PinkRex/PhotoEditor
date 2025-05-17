@@ -15,6 +15,7 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
+    DrawingInterface.h \
     Helper.h \
     ImageView.h \
     PhotoEditorPluginInterface.h \

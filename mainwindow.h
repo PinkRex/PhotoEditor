@@ -50,6 +50,7 @@ private:
     void UpdateView(QPixmap pixmap);
     void LoadPlugins();
     bool CheckImageValid();
+    void ToggleCropMode(bool mode, bool draw);
 
 private slots:
     void OpenImage();
@@ -84,6 +85,7 @@ private:
     QGraphicsPixmapItem *currentImage;
 
     QString currentImagePath;
+    QString statusText;
 
     QAction *openAction;
     QAction *saveAsAction;

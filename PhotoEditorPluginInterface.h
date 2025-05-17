@@ -12,7 +12,7 @@ class PhotoEditorPluginInterface {
 public:
     virtual ~PhotoEditorPluginInterface() {};
     virtual QString name() = 0;
-    virtual void edit(const cv::Mat &input, cv::Mat &output) = 0;
+    virtual void edit(const cv::Mat &input, cv::Mat &output, QWidget* parent) = 0;
 };
 
 #define PHOTO_EDITOR_PLUGIN_INTERFACE_IID "com.nguyenminhduc.photoeditorplugininterface"
