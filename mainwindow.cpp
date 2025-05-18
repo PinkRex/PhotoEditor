@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <UIInitializer.h>
 #include <Helper.h>
+#include <ImageHistoryManager.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -24,7 +25,7 @@ void MainWindow::ShowImage(QString path) {
     currentImagePath = path;
 
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
-    Helper::UpdateView(this, pixmap);
+    Helper::UpdateView(this, editedImage);
     QString status = QString("%1, %2x%3, %4 Bytes").arg(path).arg(pixmap.width()).arg(pixmap.height()).arg(QFile(path).size());
     statusText = status;
     imageStatusLabel->setText(status);
@@ -79,6 +80,16 @@ void MainWindow::ZoomOutImage() {
     imageView->scale(0.8, 0.8);
 }
 
+void MainWindow::Undo() {
+    editedImage = ImageHistoryManager::undo(editedImage);
+    Helper::UpdateView(this, editedImage);
+}
+
+void MainWindow::Redo() {
+    editedImage = ImageHistoryManager::redo(editedImage);
+    Helper::UpdateView(this, editedImage);
+}
+
 void MainWindow::PreviousImage() {
     QFileInfo current(currentImagePath);
     QDir dir = current.absoluteDir();
@@ -130,6 +141,8 @@ void MainWindow::RotateImage() {
         return;
     }
 
+    ImageHistoryManager::push(editedImage);
+
     currentAngle += 90.0;
     if (currentAngle >= 360.0) {
         currentAngle -= 270.0;
@@ -146,15 +159,16 @@ void MainWindow::RotateImage() {
     cv::Mat result;
     cv::warpAffine(editedImage, result, rotateMatrix, boundingBox.size(), cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
     editedImage = result.clone();
-    QPixmap pixmap = Helper::CvMatToQPixmap(result);
 
-    Helper::UpdateView(this, pixmap);
+    Helper::UpdateView(this, result);
 }
 
 void MainWindow::ResizeImage() {
     if (!Helper::CheckImageValid(this)) {
         return;
     }
+
+    ImageHistoryManager::push(editedImage);
 
     QPixmap OriginalPixmap = Helper::CvMatToQPixmap(editedImage);
     bool okWidth, okHeight;
@@ -166,16 +180,17 @@ void MainWindow::ResizeImage() {
 
     cv::Mat destImage;
     cv::resize(editedImage, destImage, cv::Size(width, height));
-    QPixmap pixmap = Helper::CvMatToQPixmap(destImage);
     editedImage = destImage;
 
-    Helper::UpdateView(this, pixmap);
+    Helper::UpdateView(this, destImage);
 }
 
 void MainWindow::CropImage() {
     if (!Helper::CheckImageValid(this)) {
         return;
     }
+
+    ImageHistoryManager::push(editedImage);
 
     if (!croppingMode) {
         Helper::ToggleCropMode(this, true, false);
@@ -204,9 +219,8 @@ void MainWindow::CropImage() {
     cv::Rect croppedArea(selection.x(), selection.y(), selection.width(), selection.height());
     cv::Mat croppedMat = editedImage(croppedArea).clone();
     editedImage = croppedMat;
-    QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
 
-    Helper::UpdateView(this, pixmap);
+    Helper::UpdateView(this, editedImage);
     Helper::ToggleCropMode(this, false, false);
 }
 
@@ -214,6 +228,8 @@ void MainWindow::PluginPerform() {
     if (!Helper::CheckImageValid(this)) {
         return;
     }
+
+    ImageHistoryManager::push(editedImage);
 
     QAction *active_action = qobject_cast<QAction*>(sender());
     PhotoEditorPluginInterface *plugin_ptr = editPlugins[active_action->text()];
@@ -223,7 +239,6 @@ void MainWindow::PluginPerform() {
     }
 
     plugin_ptr->edit(editedImage, editedImage, this);
-    QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
 
-    Helper::UpdateView(this, pixmap);
+    Helper::UpdateView(this, editedImage);
 }

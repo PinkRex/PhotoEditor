@@ -48,6 +48,7 @@ public:
     QToolBar*& getFileToolBar() { return fileToolBar; }
     QToolBar*& getViewToolBar() { return viewToolBar; }
     QToolBar*& getEditToolBar() { return editToolBar; }
+    QToolBar*& getPluginToolBar() { return pluginToolBar; }
 
     QGraphicsScene*& getImageScene() { return imageScene; }
     ImageView*& getImageView() { return imageView; }
@@ -60,6 +61,8 @@ public:
     QAction*& getExitAction() { return exitAction; }
     QAction*& getZoomInAction() { return zoomInAction; }
     QAction*& getZoomOutAction() { return zoomOutAction; }
+    QAction*& getUndoAction() { return undoAction; }
+    QAction*& getRedoAction() { return redoAction; }
     QAction*& getPreviousImageAction() { return previousImageAction; }
     QAction*& getNextImageAction() { return nextImageAction; }
     QAction*& getAboutAction() { return aboutAction; }
@@ -86,6 +89,8 @@ private slots:
     void SaveImageAs();
     void ZoomInImage();
     void ZoomOutImage();
+    void Undo();
+    void Redo();
     void PreviousImage();
     void NextImage();
     void About();
@@ -103,6 +108,7 @@ private:
     QToolBar *fileToolBar;
     QToolBar *viewToolBar;
     QToolBar *editToolBar;
+    QToolBar *pluginToolBar;
 
     QGraphicsScene *imageScene;
     ImageView *imageView;
@@ -120,6 +126,8 @@ private:
     QAction *exitAction;
     QAction *zoomInAction;
     QAction *zoomOutAction;
+    QAction *undoAction;
+    QAction *redoAction;
     QAction *previousImageAction;
     QAction *nextImageAction;
     QAction *aboutAction;

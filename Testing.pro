@@ -10,6 +10,7 @@ CONFIG += c++17
 
 SOURCES += \
     Helper.cpp \
+    ImageHistoryManager.cpp \
     ImageView.cpp \
     UIInitializer.cpp \
     main.cpp \
@@ -18,6 +19,7 @@ SOURCES += \
 HEADERS += \
     DrawingInterface.h \
     Helper.h \
+    ImageHistoryManager.h \
     ImageView.h \
     PhotoEditorPluginInterface.h \
     UIInitializer.h \

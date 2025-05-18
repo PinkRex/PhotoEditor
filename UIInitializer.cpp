@@ -11,6 +11,8 @@ void UIInitializer::InitUI(MainWindow *mainWindow) {
     mainWindow->getFileToolBar() = mainWindow->addToolBar("File");
     mainWindow->getViewToolBar() = mainWindow->addToolBar("View");
     mainWindow->getEditToolBar() = mainWindow->addToolBar("Edit");
+    mainWindow->addToolBarBreak(Qt::TopToolBarArea);
+    mainWindow->getPluginToolBar() = mainWindow->addToolBar("Plugin");
 
     mainWindow->getImageScene() = new QGraphicsScene(mainWindow);
     mainWindow->getImageView() = new ImageView(mainWindow);
@@ -58,11 +60,15 @@ void UIInitializer::InitUI(MainWindow *mainWindow) {
     // Group View menu & View toolbar
     mainWindow->getViewMenu()->addAction(mainWindow->getZoomInAction());
     mainWindow->getViewMenu()->addAction(mainWindow->getZoomOutAction());
+    mainWindow->getViewMenu()->addAction(mainWindow->getUndoAction());
+    mainWindow->getViewMenu()->addAction(mainWindow->getRedoAction());
     mainWindow->getViewMenu()->addAction(mainWindow->getPreviousImageAction());
     mainWindow->getViewMenu()->addAction(mainWindow->getNextImageAction());
 
     mainWindow->getViewToolBar()->addAction(mainWindow->getZoomInAction());
     mainWindow->getViewToolBar()->addAction(mainWindow->getZoomOutAction());
+    mainWindow->getViewToolBar()->addAction(mainWindow->getUndoAction());
+    mainWindow->getViewToolBar()->addAction(mainWindow->getRedoAction());
     mainWindow->getViewToolBar()->addAction(mainWindow->getPreviousImageAction());
     mainWindow->getViewToolBar()->addAction(mainWindow->getNextImageAction());
 
@@ -86,6 +92,8 @@ void UIInitializer::CreateActions(MainWindow *mainWindow) {
     mainWindow->getExitAction() = new QAction("&Exit", mainWindow);
     mainWindow->getZoomInAction() = new QAction("&Zoom In", mainWindow);
     mainWindow->getZoomOutAction() = new QAction("&Zoom Out", mainWindow);
+    mainWindow->getUndoAction() = new QAction("&Undo", mainWindow);
+    mainWindow->getRedoAction() = new QAction("&Redo", mainWindow);
     mainWindow->getPreviousImageAction() = new QAction("&Previous Image", mainWindow);
     mainWindow->getNextImageAction() = new QAction("&Next Image", mainWindow);
     mainWindow->getAboutAction() = new QAction("&About", mainWindow);
@@ -98,6 +106,8 @@ void UIInitializer::CreateActions(MainWindow *mainWindow) {
     mainWindow->connect(mainWindow->getExitAction(), SIGNAL(triggered(bool)), QApplication::instance(), SLOT(quit()));
     mainWindow->connect(mainWindow->getZoomInAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(ZoomInImage()));
     mainWindow->connect(mainWindow->getZoomOutAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(ZoomOutImage()));
+    mainWindow->connect(mainWindow->getUndoAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(Undo()));
+    mainWindow->connect(mainWindow->getRedoAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(Redo()));
     mainWindow->connect(mainWindow->getPreviousImageAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(PreviousImage()));
     mainWindow->connect(mainWindow->getNextImageAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(NextImage()));
     mainWindow->connect(mainWindow->getAboutAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(About()));
@@ -117,7 +127,7 @@ void UIInitializer::LoadPlugins(MainWindow *mainWindow) {
         if(plugin_ptr) {
             QAction *action = new QAction(plugin_ptr->name());
             mainWindow->getEditMenu()->addAction(action);
-            mainWindow->getEditToolBar()->addAction(action);
+            mainWindow->getPluginToolBar()->addAction(action);
             mainWindow->getEditPlugins()[plugin_ptr->name()] = plugin_ptr;
             mainWindow->connect(action, SIGNAL(triggered(bool)), mainWindow, SLOT(PluginPerform()));
         } else {

@@ -20,7 +20,8 @@ QPixmap Helper::CvMatToQPixmap(cv::Mat matImage) {
     return QPixmap::fromImage(image_edited);
 }
 
-void Helper::UpdateView(MainWindow *mainWindow, QPixmap pixmap) {
+void Helper::UpdateView(MainWindow *mainWindow, cv::Mat mat) {
+    QPixmap pixmap = CvMatToQPixmap(mat);
     mainWindow->getImageScene()->clear();
     mainWindow->getImageView()->resetTransform();
     mainWindow->getCurrentImage() = mainWindow->getImageScene()->addPixmap(pixmap);

@@ -8,7 +8,7 @@
 class Helper {
 public:
     static QPixmap CvMatToQPixmap(cv::Mat matImage);
-    static void UpdateView(MainWindow *mainWindow, QPixmap pixmap);
+    static void UpdateView(MainWindow *mainWindow, cv::Mat mat);
     static bool CheckImageValid(MainWindow *mainWindow);
     static void ToggleCropMode(MainWindow *mainWindow, bool mode, bool draw);
 };
