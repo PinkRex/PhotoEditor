@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "UIInitializer.h"
+#include <UIInitializer.h>
+#include <Helper.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -17,23 +18,13 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::UpdateView(QPixmap pixmap) {
-    imageScene->clear();
-    imageView->resetTransform();
-    currentImage = imageScene->addPixmap(pixmap);
-    imageScene->update();
-    imageView->setSceneRect(pixmap.rect());
-    QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
-    imageStatusLabel->setText(status);
-}
-
 void MainWindow::ShowImage(QString path) {
     originalImage = cv::imread(path.toUtf8().constData(), cv::IMREAD_COLOR);
     editedImage = originalImage.clone();
     currentImagePath = path;
 
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
-    UpdateView(pixmap);
+    Helper::UpdateView(this, pixmap);
     QString status = QString("%1, %2x%3, %4 Bytes").arg(path).arg(pixmap.width()).arg(pixmap.height()).arg(QFile(path).size());
     statusText = status;
     imageStatusLabel->setText(status);
@@ -134,23 +125,8 @@ void MainWindow::About() {
     msgBox.exec();
 }
 
-bool MainWindow::CheckImageValid() {
-    if (currentImage == nullptr) {
-        QMessageBox::information(this, "Information", "No image to edit.");
-        return false;
-    }
-
-    if (editedImage.empty()) {
-        QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(currentImagePath);
-        QMessageBox::warning(this, "Error", message);
-        return false;
-    }
-
-    return true;
-}
-
 void MainWindow::RotateImage() {
-    if (!CheckImageValid()) {
+    if (!Helper::CheckImageValid(this)) {
         return;
     }
 
@@ -172,11 +148,11 @@ void MainWindow::RotateImage() {
     editedImage = result.clone();
     QPixmap pixmap = Helper::CvMatToQPixmap(result);
 
-    UpdateView(pixmap);
+    Helper::UpdateView(this, pixmap);
 }
 
 void MainWindow::ResizeImage() {
-    if (!CheckImageValid()) {
+    if (!Helper::CheckImageValid(this)) {
         return;
     }
 
@@ -193,22 +169,16 @@ void MainWindow::ResizeImage() {
     QPixmap pixmap = Helper::CvMatToQPixmap(destImage);
     editedImage = destImage;
 
-    UpdateView(pixmap);
-}
-void MainWindow::ToggleCropMode(bool mode, bool draw) {
-    croppingMode = mode;
-    hasSelection = draw;
-    imageView->toggleDrawingMode(croppingMode);
-    imageView->setCropMode(croppingMode);
+    Helper::UpdateView(this, pixmap);
 }
 
 void MainWindow::CropImage() {
-    if (!CheckImageValid()) {
+    if (!Helper::CheckImageValid(this)) {
         return;
     }
 
     if (!croppingMode) {
-        ToggleCropMode(true, false);
+        Helper::ToggleCropMode(this, true, false);
         QString status = QString("Draw a selection rectangle to crop.");
         imageStatusLabel->setText(status);
         return;
@@ -217,7 +187,7 @@ void MainWindow::CropImage() {
     QRect selection = imageView->getSelectionRect();
     if (selection.isNull() || selection.width() == 0 || selection.height() == 0) {
         QMessageBox::information(this, "Information", "No selection made for cropping.");
-        ToggleCropMode(false, false);
+        Helper::ToggleCropMode(this, false, false);
         imageStatusLabel->setText(statusText);
         return;
     }
@@ -226,7 +196,7 @@ void MainWindow::CropImage() {
     int imageHeight = editedImage.rows;
     if (selection.right() >= imageWidth || selection.bottom() >= imageHeight || selection.x() < 0 || selection.y() < 0) {
         QMessageBox::warning(this, "Warning", "Selection area is outside the image bounds.");
-        ToggleCropMode(false, false);
+        Helper::ToggleCropMode(this, false, false);
         return;
     }
     hasSelection = true;
@@ -235,12 +205,13 @@ void MainWindow::CropImage() {
     cv::Mat croppedMat = editedImage(croppedArea).clone();
     editedImage = croppedMat;
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
-    UpdateView(pixmap);
-    ToggleCropMode(false, false);
+
+    Helper::UpdateView(this, pixmap);
+    Helper::ToggleCropMode(this, false, false);
 }
 
 void MainWindow::PluginPerform() {
-    if (!CheckImageValid()) {
+    if (!Helper::CheckImageValid(this)) {
         return;
     }
 
@@ -254,5 +225,5 @@ void MainWindow::PluginPerform() {
     plugin_ptr->edit(editedImage, editedImage, this);
     QPixmap pixmap = Helper::CvMatToQPixmap(editedImage);
 
-    UpdateView(pixmap);
+    Helper::UpdateView(this, pixmap);
 }

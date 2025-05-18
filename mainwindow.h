@@ -18,7 +18,6 @@
 #include <QInputDialog>
 #include <QMouseEvent>
 #include <ImageView.h>
-#include <Helper.h>
 #include <QPluginLoader>
 #include <QMap>
 #include <PhotoEditorPluginInterface.h>
@@ -40,6 +39,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
     QMenu*& getFileMenu() { return fileMenu; }
     QMenu*& getViewMenu() { return viewMenu; }
     QMenu*& getEditMenu() { return editMenu; }
@@ -68,16 +68,18 @@ public:
     QAction*& getCropImageAction() { return cropImageAction; }
 
     QMap<QString, PhotoEditorPluginInterface*>& getEditPlugins() { return editPlugins; }
+    QGraphicsPixmapItem*& getCurrentImage() { return currentImage; }
+
+    QString getCurrentImagePath() { return currentImagePath; }
+    QString getStatusText() { return statusText; }
+    cv::Mat getOriginalImage() { return originalImage; }
+    cv::Mat getEditedImage() { return editedImage; }
+    bool& getCroppingMode() { return croppingMode; }
+    bool& getHasSelection() { return hasSelection; }
 
 public:
     Ui::MainWindow *ui;
-    void InitUI();
-    void CreateActions();
     void ShowImage(QString path);
-    void UpdateView(QPixmap pixmap);
-    void LoadPlugins();
-    bool CheckImageValid();
-    void ToggleCropMode(bool mode, bool draw);
 
 private slots:
     void OpenImage();

@@ -1,4 +1,6 @@
-#pragma once
+#ifndef IMAGE_VIEW_H
+#define IMAGE_VIEW_H
+
 #include "public/DrawingInterface.h"
 #include <QGraphicsView>
 #include <QMouseEvent>
@@ -42,3 +44,5 @@ signals:
     void imageDropped(const QString &filePath);
     void selectionFinished(const QRect &rect);
 };
+
+#endif //IMAGE_VIEW_H

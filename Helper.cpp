@@ -19,3 +19,35 @@ QPixmap Helper::CvMatToQPixmap(cv::Mat matImage) {
 
     return QPixmap::fromImage(image_edited);
 }
+
+void Helper::UpdateView(MainWindow *mainWindow, QPixmap pixmap) {
+    mainWindow->getImageScene()->clear();
+    mainWindow->getImageView()->resetTransform();
+    mainWindow->getCurrentImage() = mainWindow->getImageScene()->addPixmap(pixmap);
+    mainWindow->getImageScene()->update();
+    mainWindow->getImageView()->setSceneRect(pixmap.rect());
+    QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
+    mainWindow->getImageStatusLabel()->setText(status);
+}
+
+bool Helper::CheckImageValid(MainWindow *mainWindow) {
+    if (mainWindow->getCurrentImage() == nullptr) {
+        QMessageBox::information(mainWindow, "Information", "No image to edit.");
+        return false;
+    }
+
+    if (mainWindow->getEditedImage().empty()) {
+        QString message = QString("Failed to load the image at: %1\n\nPlease check the file name and path (avoid using special or non-ASCII characters).").arg(mainWindow->getCurrentImagePath());
+        QMessageBox::warning(mainWindow, "Error", message);
+        return false;
+    }
+
+    return true;
+}
+
+void Helper::ToggleCropMode(MainWindow *mainWindow, bool mode, bool draw) {
+    mainWindow->getCroppingMode() = mode;
+    mainWindow->getHasSelection() = draw;
+    mainWindow->getImageView()->toggleDrawingMode(mainWindow->getCroppingMode());
+    mainWindow->getImageView()->setCropMode(mainWindow->getCroppingMode());
+}
