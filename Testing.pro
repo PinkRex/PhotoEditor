@@ -11,6 +11,7 @@ CONFIG += c++17
 SOURCES += \
     Helper.cpp \
     ImageView.cpp \
+    UIInitializer.cpp \
     main.cpp \
     mainwindow.cpp
 
@@ -19,6 +20,7 @@ HEADERS += \
     Helper.h \
     ImageView.h \
     PhotoEditorPluginInterface.h \
+    UIInitializer.h \
     mainwindow.h
 
 FORMS += \

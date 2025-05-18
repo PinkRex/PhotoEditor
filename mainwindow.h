@@ -40,9 +40,36 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    ImageView* GetImageView();
+    QMenu*& getFileMenu() { return fileMenu; }
+    QMenu*& getViewMenu() { return viewMenu; }
+    QMenu*& getEditMenu() { return editMenu; }
+    QMenu*& getHelpMenu() { return helpMenu; }
 
-private:
+    QToolBar*& getFileToolBar() { return fileToolBar; }
+    QToolBar*& getViewToolBar() { return viewToolBar; }
+    QToolBar*& getEditToolBar() { return editToolBar; }
+
+    QGraphicsScene*& getImageScene() { return imageScene; }
+    ImageView*& getImageView() { return imageView; }
+
+    QStatusBar*& getImageStatusBar() { return imageStatusBar; }
+    QLabel*& getImageStatusLabel() { return imageStatusLabel; }
+
+    QAction*& getOpenAction() { return openAction; }
+    QAction*& getSaveAsAction() { return saveAsAction; }
+    QAction*& getExitAction() { return exitAction; }
+    QAction*& getZoomInAction() { return zoomInAction; }
+    QAction*& getZoomOutAction() { return zoomOutAction; }
+    QAction*& getPreviousImageAction() { return previousImageAction; }
+    QAction*& getNextImageAction() { return nextImageAction; }
+    QAction*& getAboutAction() { return aboutAction; }
+    QAction*& getRotateImageAction() { return rotateImageAction; }
+    QAction*& getResizeImageAction() { return resizeImageAction; }
+    QAction*& getCropImageAction() { return cropImageAction; }
+
+    QMap<QString, PhotoEditorPluginInterface*>& getEditPlugins() { return editPlugins; }
+
+public:
     Ui::MainWindow *ui;
     void InitUI();
     void CreateActions();
@@ -70,7 +97,6 @@ private:
     QMenu *viewMenu;
     QMenu *editMenu;
     QMenu *helpMenu;
-    QMenu *settingMenu;
 
     QToolBar *fileToolBar;
     QToolBar *viewToolBar;

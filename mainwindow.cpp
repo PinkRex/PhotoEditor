@@ -1,128 +1,20 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "UIInitializer.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    InitUI();
+    UIInitializer::InitUI(this);
     currentImage = nullptr;
-    LoadPlugins();
+    UIInitializer::LoadPlugins(this);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-}
-
-void MainWindow::InitUI(){
-    this->resize(800, 600);
-
-    // Init Menubar
-    fileMenu = menuBar()->addMenu("&File");
-    viewMenu = menuBar()->addMenu("&View");
-    editMenu = menuBar()->addMenu("&Edit");
-    helpMenu = menuBar()->addMenu("&Help");
-
-    // Init Toolbar
-    fileToolBar = addToolBar("File");
-    viewToolBar = addToolBar("View");
-    editToolBar = addToolBar("Edit");
-
-    // Init Image Display Area
-    imageScene = new QGraphicsScene(this);
-    imageView = new ImageView(this);
-    imageView->setScene(imageScene);
-    imageView->setObjectName("imageView");
-    setCentralWidget(imageView);
-    connect(imageView, &ImageView::imageDropped, this, &MainWindow::ShowImage);
-
-    // Init Image Information Display
-    imageStatusBar = statusBar();
-    QWidget *container = new QWidget(imageStatusBar);
-
-    QWidget* leftSpacer = new QWidget();
-    QWidget* rightSpacer = new QWidget();
-    leftSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-
-    imageStatusLabel = new QLabel(imageStatusBar);
-    imageStatusLabel->setAlignment(Qt::AlignCenter);
-    imageStatusLabel->setText("The image infomation will be shown here!");
-    imageStatusLabel->setStyleSheet("QLabel { padding: 2px; }");
-    imageStatusLabel->setMinimumHeight(30);
-    QFont font = imageStatusLabel->font();
-    font.setItalic(true);
-    imageStatusLabel->setFont(font);
-
-    QHBoxLayout *layout = new QHBoxLayout(container);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(leftSpacer);
-    layout->addWidget(imageStatusLabel);
-    layout->addWidget(rightSpacer);
-    imageStatusBar->addPermanentWidget(container, 1);
-
-    CreateActions();
-
-    // Group File menu & File toolbar
-    fileMenu->addAction(openAction);
-    fileMenu->addAction(saveAsAction);
-    fileMenu->addAction(exitAction);
-
-    fileToolBar->addAction(openAction);
-    fileToolBar->addAction(saveAsAction);
-    fileToolBar->addAction(exitAction);
-
-    // Group View menu & View toolbar
-    viewMenu->addAction(zoomInAction);
-    viewMenu->addAction(zoomOutAction);
-    viewMenu->addAction(previousImageAction);
-    viewMenu->addAction(nextImageAction);
-
-    viewToolBar->addAction(zoomInAction);
-    viewToolBar->addAction(zoomOutAction);
-    viewToolBar->addAction(previousImageAction);
-    viewToolBar->addAction(nextImageAction);
-
-    // Group Edit menu & Edit toolbar
-    editMenu->addAction(rotateImageAction);
-    editMenu->addAction(resizeImageAction);
-    editMenu->addAction(cropImageAction);
-    editMenu->addSeparator();
-
-    editToolBar->addAction(rotateImageAction);
-    editToolBar->addAction(resizeImageAction);
-    editToolBar->addAction(cropImageAction);
-
-    // Group Help menu
-    helpMenu->addAction(aboutAction);
-}
-
-void MainWindow::CreateActions() {
-    openAction = new QAction("&Open", this);
-    saveAsAction = new QAction("&Save As", this);
-    exitAction = new QAction("&Exit", this);
-    zoomInAction = new QAction("&Zoom In", this);
-    zoomOutAction = new QAction("&Zoom Out", this);
-    previousImageAction = new QAction("&Previous Image", this);
-    nextImageAction = new QAction("&Next Image", this);
-    aboutAction = new QAction("&About", this);
-    rotateImageAction = new QAction("&Rotate", this);
-    resizeImageAction = new QAction("&Resize", this);
-    cropImageAction = new QAction("&Crop", this);
-
-    connect(exitAction, SIGNAL(triggered(bool)), QApplication::instance(), SLOT(quit()));
-    connect(openAction, SIGNAL(triggered(bool)), this, SLOT(OpenImage()));
-    connect(saveAsAction, SIGNAL(triggered(bool)), this, SLOT(SaveImageAs()));
-    connect(zoomInAction, SIGNAL(triggered(bool)), this, SLOT(ZoomInImage()));
-    connect(zoomOutAction, SIGNAL(triggered(bool)), this, SLOT(ZoomOutImage()));
-    connect(previousImageAction, SIGNAL(triggered(bool)), this, SLOT(PreviousImage()));
-    connect(nextImageAction, SIGNAL(triggered(bool)), this, SLOT(NextImage()));
-    connect(aboutAction, SIGNAL(triggered(bool)), this, SLOT(About()));
-    connect(rotateImageAction, SIGNAL(triggered(bool)), this, SLOT(RotateImage()));
-    connect(resizeImageAction, SIGNAL(triggered(bool)), this, SLOT(ResizeImage()));
-    connect(cropImageAction, SIGNAL(triggered(bool)), this, SLOT(CropImage()));
 }
 
 void MainWindow::UpdateView(QPixmap pixmap) {
@@ -133,26 +25,6 @@ void MainWindow::UpdateView(QPixmap pixmap) {
     imageView->setSceneRect(pixmap.rect());
     QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
     imageStatusLabel->setText(status);
-}
-
-void MainWindow::LoadPlugins() {
-    QDir pluginsDir(QApplication::instance()->applicationDirPath() + "/plugins");
-    QStringList nameFilters;
-    nameFilters << "*.dll";
-    QFileInfoList plugins = pluginsDir.entryInfoList(nameFilters, QDir::NoDotAndDotDot | QDir::Files, QDir::Name);
-    foreach(QFileInfo plugin, plugins) {
-        QPluginLoader pluginLoader(plugin.absoluteFilePath(), this);
-        PhotoEditorPluginInterface *plugin_ptr = dynamic_cast<PhotoEditorPluginInterface*>(pluginLoader.instance());
-        if(plugin_ptr) {
-            QAction *action = new QAction(plugin_ptr->name());
-            editMenu->addAction(action);
-            editToolBar->addAction(action);
-            editPlugins[plugin_ptr->name()] = plugin_ptr;
-            connect(action, SIGNAL(triggered(bool)), this, SLOT(PluginPerform()));
-        } else {
-            qDebug() << "bad plugin: " << plugin.absoluteFilePath();
-        }
-    }
 }
 
 void MainWindow::ShowImage(QString path) {
