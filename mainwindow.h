@@ -20,6 +20,7 @@
 #include <ImageView.h>
 #include <QPluginLoader>
 #include <QMap>
+#include <QTimer>
 #include <PhotoEditorPluginInterface.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -57,6 +58,7 @@ public:
     QLabel*& getImageStatusLabel() { return imageStatusLabel; }
 
     QAction*& getOpenAction() { return openAction; }
+    QAction*& getCropScreenAction() {return cropScreenAction; }
     QAction*& getSaveAsAction() { return saveAsAction; }
     QAction*& getExitAction() { return exitAction; }
     QAction*& getZoomInAction() { return zoomInAction; }
@@ -86,6 +88,7 @@ public:
 
 private slots:
     void OpenImage();
+    void CropScreen();
     void SaveImageAs();
     void ZoomInImage();
     void ZoomOutImage();
@@ -98,6 +101,7 @@ private slots:
     void ResizeImage();
     void CropImage();
     void PluginPerform();
+    void handleCroppedScreen(const cv::Mat &mat);
 
 private:
     QMenu *fileMenu;
@@ -122,6 +126,7 @@ private:
     QString statusText;
 
     QAction *openAction;
+    QAction *cropScreenAction;
     QAction *saveAsAction;
     QAction *exitAction;
     QAction *zoomInAction;

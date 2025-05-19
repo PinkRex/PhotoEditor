@@ -1,0 +1,10 @@
+release/Helper.o
+release/ImageHistoryManager.o
+release/ImageView.o
+release/ScreenshotCropper.o
+release/UIInitializer.o
+release/main.o
+release/mainwindow.o
+release/moc_ImageView.o
+release/moc_ScreenshotCropper.o
+release/moc_mainwindow.o

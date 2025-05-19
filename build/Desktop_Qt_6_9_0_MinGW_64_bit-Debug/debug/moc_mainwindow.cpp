@@ -42,6 +42,7 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         "MainWindow",
         "OpenImage",
         "",
+        "CropScreen",
         "SaveImageAs",
         "ZoomInImage",
         "ZoomOutImage",
@@ -53,36 +54,45 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         "RotateImage",
         "ResizeImage",
         "CropImage",
-        "PluginPerform"
+        "PluginPerform",
+        "handleCroppedScreen",
+        "cv::Mat",
+        "mat"
     };
 
     QtMocHelpers::UintData qt_methods {
         // Slot 'OpenImage'
         QtMocHelpers::SlotData<void()>(1, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'SaveImageAs'
+        // Slot 'CropScreen'
         QtMocHelpers::SlotData<void()>(3, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'ZoomInImage'
+        // Slot 'SaveImageAs'
         QtMocHelpers::SlotData<void()>(4, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'ZoomOutImage'
+        // Slot 'ZoomInImage'
         QtMocHelpers::SlotData<void()>(5, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'Undo'
+        // Slot 'ZoomOutImage'
         QtMocHelpers::SlotData<void()>(6, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'Redo'
+        // Slot 'Undo'
         QtMocHelpers::SlotData<void()>(7, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'PreviousImage'
+        // Slot 'Redo'
         QtMocHelpers::SlotData<void()>(8, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'NextImage'
+        // Slot 'PreviousImage'
         QtMocHelpers::SlotData<void()>(9, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'About'
+        // Slot 'NextImage'
         QtMocHelpers::SlotData<void()>(10, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'RotateImage'
+        // Slot 'About'
         QtMocHelpers::SlotData<void()>(11, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'ResizeImage'
+        // Slot 'RotateImage'
         QtMocHelpers::SlotData<void()>(12, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'CropImage'
+        // Slot 'ResizeImage'
         QtMocHelpers::SlotData<void()>(13, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'PluginPerform'
+        // Slot 'CropImage'
         QtMocHelpers::SlotData<void()>(14, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'PluginPerform'
+        QtMocHelpers::SlotData<void()>(15, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'handleCroppedScreen'
+        QtMocHelpers::SlotData<void(const cv::Mat &)>(16, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { 0x80000000 | 17, 18 },
+        }}),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -107,22 +117,23 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
         case 0: _t->OpenImage(); break;
-        case 1: _t->SaveImageAs(); break;
-        case 2: _t->ZoomInImage(); break;
-        case 3: _t->ZoomOutImage(); break;
-        case 4: _t->Undo(); break;
-        case 5: _t->Redo(); break;
-        case 6: _t->PreviousImage(); break;
-        case 7: _t->NextImage(); break;
-        case 8: _t->About(); break;
-        case 9: _t->RotateImage(); break;
-        case 10: _t->ResizeImage(); break;
-        case 11: _t->CropImage(); break;
-        case 12: _t->PluginPerform(); break;
+        case 1: _t->CropScreen(); break;
+        case 2: _t->SaveImageAs(); break;
+        case 3: _t->ZoomInImage(); break;
+        case 4: _t->ZoomOutImage(); break;
+        case 5: _t->Undo(); break;
+        case 6: _t->Redo(); break;
+        case 7: _t->PreviousImage(); break;
+        case 8: _t->NextImage(); break;
+        case 9: _t->About(); break;
+        case 10: _t->RotateImage(); break;
+        case 11: _t->ResizeImage(); break;
+        case 12: _t->CropImage(); break;
+        case 13: _t->PluginPerform(); break;
+        case 14: _t->handleCroppedScreen((*reinterpret_cast< std::add_pointer_t<cv::Mat>>(_a[1]))); break;
         default: ;
         }
     }
-    (void)_a;
 }
 
 const QMetaObject *MainWindow::metaObject() const
@@ -144,14 +155,14 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 13)
+        if (_id < 15)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 13;
+        _id -= 15;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 13)
+        if (_id < 15)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 13;
+        _id -= 15;
     }
     return _id;
 }

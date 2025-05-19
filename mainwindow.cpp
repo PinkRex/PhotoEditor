@@ -1,8 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <UIInitializer.h>
-#include <Helper.h>
-#include <ImageHistoryManager.h>
+#include "UIInitializer.h"
+#include "Helper.h"
+#include "ImageHistoryManager.h"
+#include "ScreenshotCropper.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -43,6 +44,25 @@ void MainWindow::OpenImage() {
         filePaths = dialog.selectedFiles();
         ShowImage(filePaths.at(0));
     }
+}
+
+void MainWindow::CropScreen() {
+    this->hide();
+
+    QTimer::singleShot(300, this, [=]() {
+        QScreen *screen = QGuiApplication::primaryScreen();
+        if (!screen) return;
+
+        QPixmap pixmap = screen->grabWindow(0);
+        ScreenshotCropper *screenshot = new ScreenshotCropper(pixmap);
+        this->show();
+        connect(screenshot, &ScreenshotCropper::croppedMatReady, this, &MainWindow::handleCroppedScreen);
+    });
+}
+
+void MainWindow::handleCroppedScreen(const cv::Mat &mat) {
+    editedImage = mat;
+    Helper::UpdateView(this, editedImage);
 }
 
 void MainWindow::SaveImageAs() {

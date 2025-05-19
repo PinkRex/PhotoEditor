@@ -12,6 +12,7 @@ SOURCES += \
     Helper.cpp \
     ImageHistoryManager.cpp \
     ImageView.cpp \
+    ScreenshotCropper.cpp \
     UIInitializer.cpp \
     main.cpp \
     mainwindow.cpp
@@ -22,8 +23,10 @@ HEADERS += \
     ImageHistoryManager.h \
     ImageView.h \
     PhotoEditorPluginInterface.h \
+    ScreenshotCropper.h \
     UIInitializer.h \
-    mainwindow.h
+    mainwindow.h \
+    public/DrawingInterface.h
 
 FORMS += \
     mainwindow.ui

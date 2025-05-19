@@ -50,10 +50,12 @@ void UIInitializer::InitUI(MainWindow *mainWindow) {
 
     // Group File menu & File toolbar
     mainWindow->getFileMenu()->addAction(mainWindow->getOpenAction());
+    mainWindow->getFileMenu()->addAction(mainWindow->getCropScreenAction());
     mainWindow->getFileMenu()->addAction(mainWindow->getSaveAsAction());
     mainWindow->getFileMenu()->addAction(mainWindow->getExitAction());
 
     mainWindow->getFileToolBar()->addAction(mainWindow->getOpenAction());
+    mainWindow->getFileToolBar()->addAction(mainWindow->getCropScreenAction());
     mainWindow->getFileToolBar()->addAction(mainWindow->getSaveAsAction());
     mainWindow->getFileToolBar()->addAction(mainWindow->getExitAction());
 
@@ -88,6 +90,7 @@ void UIInitializer::InitUI(MainWindow *mainWindow) {
 
 void UIInitializer::CreateActions(MainWindow *mainWindow) {
     mainWindow->getOpenAction() = new QAction("&Open", mainWindow);
+    mainWindow->getCropScreenAction() = new QAction("&Crop Screen", mainWindow);
     mainWindow->getSaveAsAction() = new QAction("&Save As", mainWindow);
     mainWindow->getExitAction() = new QAction("&Exit", mainWindow);
     mainWindow->getZoomInAction() = new QAction("&Zoom In", mainWindow);
@@ -102,6 +105,7 @@ void UIInitializer::CreateActions(MainWindow *mainWindow) {
     mainWindow->getCropImageAction() = new QAction("&Crop", mainWindow);
 
     mainWindow->connect(mainWindow->getOpenAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(OpenImage()));
+    mainWindow->connect(mainWindow->getCropScreenAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(CropScreen()));
     mainWindow->connect(mainWindow->getSaveAsAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(SaveImageAs()));
     mainWindow->connect(mainWindow->getExitAction(), SIGNAL(triggered(bool)), QApplication::instance(), SLOT(quit()));
     mainWindow->connect(mainWindow->getZoomInAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(ZoomInImage()));
