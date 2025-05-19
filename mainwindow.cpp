@@ -168,7 +168,6 @@ void MainWindow::ResizeImage() {
         return;
     }
 
-    ImageHistoryManager::push(editedImage);
 
     QPixmap OriginalPixmap = Helper::CvMatToQPixmap(editedImage);
     bool okWidth, okHeight;
@@ -177,6 +176,8 @@ void MainWindow::ResizeImage() {
 
     int height = QInputDialog::getInt(this, "Resize Image", "Enter new height:", OriginalPixmap.height(), 1, 10000, 1, &okHeight);
     if (!okHeight) return;
+
+    ImageHistoryManager::push(editedImage);
 
     cv::Mat destImage;
     cv::resize(editedImage, destImage, cv::Size(width, height));
