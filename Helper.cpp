@@ -27,6 +27,7 @@ void Helper::UpdateView(MainWindow *mainWindow, cv::Mat mat) {
     mainWindow->getCurrentImage() = mainWindow->getImageScene()->addPixmap(pixmap);
     mainWindow->getImageScene()->update();
     mainWindow->getImageView()->setSceneRect(pixmap.rect());
+    mainWindow->getImageView()->fitInView(pixmap.rect(), Qt::KeepAspectRatio);
     QString status = QString("(eddited image), %1x%2").arg(pixmap.width()).arg(pixmap.height());
     mainWindow->getImageStatusLabel()->setText(status);
 }
