@@ -37,10 +37,10 @@ void ScreenshotCropper::mouseReleaseEvent(QMouseEvent *event) {
     if (selected.width() > 5 && selected.height() > 5) {
         QPixmap cropped = m_screenshot.copy(selected);
 
-        QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
-        QString filePath = QString("C:/Users/ACER/OneDrive/Documents/Testing/ScreenShots/cropped_%1.png").arg(timestamp);
-        cropped.save(filePath);
-        QMessageBox::information(this, "Save", "The image has been saved successfully at: " + filePath);
+        // QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+        // QString filePath = QString("C:/Users/ACER/OneDrive/Documents/Testing/ScreenShots/cropped_%1.png").arg(timestamp);
+        // cropped.save(filePath);
+        // QMessageBox::information(this, "Save", "The image has been saved successfully at: " + filePath);
         QImage croppedImage = cropped.toImage().convertToFormat(QImage::Format_BGR888);
         cv::Mat mat(croppedImage.height(), croppedImage.width(), CV_8UC3, (void*)croppedImage.bits(), croppedImage.bytesPerLine());
         cv::Mat matCopy = mat.clone();

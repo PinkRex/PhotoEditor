@@ -19,7 +19,6 @@
 #include <QMouseEvent>
 #include <ImageView.h>
 #include <QPluginLoader>
-#include <QMap>
 #include <QTimer>
 #include <PhotoEditorPluginInterface.h>
 #include <opencv2/core/core.hpp>
@@ -44,6 +43,7 @@ public:
     QMenu*& getFileMenu() { return fileMenu; }
     QMenu*& getViewMenu() { return viewMenu; }
     QMenu*& getEditMenu() { return editMenu; }
+    QMenu*& getPluginMenu() { return pluginMenu; }
     QMenu*& getHelpMenu() { return helpMenu; }
 
     QToolBar*& getFileToolBar() { return fileToolBar; }
@@ -71,6 +71,8 @@ public:
     QAction*& getRotateImageAction() { return rotateImageAction; }
     QAction*& getResizeImageAction() { return resizeImageAction; }
     QAction*& getCropImageAction() { return cropImageAction; }
+    QAction*& getLoadPluginsAction() { return loadPluginsAction; }
+    QAction*& getUnloadPluginAction() { return unloadPluginsAction; }
 
     QMap<QString, PhotoEditorPluginInterface*>& getEditPlugins() { return editPlugins; }
     QGraphicsPixmapItem*& getCurrentImage() { return currentImage; }
@@ -85,6 +87,13 @@ public:
 public:
     Ui::MainWindow *ui;
     void ShowImage(QString path);
+    struct PluginInfo {
+        QString name;
+        QString filePath;
+        QPluginLoader* loader;
+        PhotoEditorPluginInterface* instance;
+    };
+    QList<PluginInfo> loadedPlugins;
 
 private slots:
     void OpenImage();
@@ -102,11 +111,14 @@ private slots:
     void CropImage();
     void PluginPerform();
     void handleCroppedScreen(const cv::Mat &mat);
+    void LoadPlugins();
+    void UnloadPlugins();
 
 private:
     QMenu *fileMenu;
     QMenu *viewMenu;
     QMenu *editMenu;
+    QMenu *pluginMenu;
     QMenu *helpMenu;
 
     QToolBar *fileToolBar;
@@ -129,6 +141,7 @@ private:
     QAction *cropScreenAction;
     QAction *saveAsAction;
     QAction *exitAction;
+
     QAction *zoomInAction;
     QAction *zoomOutAction;
     QAction *undoAction;
@@ -136,9 +149,13 @@ private:
     QAction *previousImageAction;
     QAction *nextImageAction;
     QAction *aboutAction;
+
     QAction *rotateImageAction;
     QAction *resizeImageAction;
     QAction *cropImageAction;
+
+    QAction *loadPluginsAction;
+    QAction *unloadPluginsAction;
 
     QMap<QString, PhotoEditorPluginInterface*> editPlugins;
 

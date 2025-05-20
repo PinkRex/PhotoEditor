@@ -4,6 +4,7 @@
 #include "Helper.h"
 #include "ImageHistoryManager.h"
 #include "ScreenshotCropper.h"
+#include "PluginUnloadDialog.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -12,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     UIInitializer::InitUI(this);
     currentImage = nullptr;
-    UIInitializer::LoadPlugins(this);
+    UIInitializer::AutoLoadPlugins(this);
 }
 
 MainWindow::~MainWindow()
@@ -243,6 +244,77 @@ void MainWindow::CropImage() {
 
     Helper::UpdateView(this, editedImage);
     Helper::ToggleCropMode(this, false, false);
+}
+
+void MainWindow::LoadPlugins() {
+    QStringList fileNames = QFileDialog::getOpenFileNames(this, "Select Plugins(s)0", QDir::currentPath(), "DLL files (*.dll)");
+
+    for (auto &filePath : std::as_const(fileNames)) {
+        QPluginLoader *loader = new QPluginLoader(filePath);
+        QObject *plugin = loader->instance();
+
+        if (!plugin) {
+            qDebug() << "Failed to load plugin:" << filePath;
+            qDebug() << "Error:" << loader->errorString();
+            delete loader;
+            continue;
+        }
+
+        PhotoEditorPluginInterface *loadedPlugin = dynamic_cast<PhotoEditorPluginInterface*>(plugin);
+
+        if(loadedPlugin) {
+            qDebug() << "Plugin loaded: " << filePath;
+            qDebug() << "Plugin name: " << loadedPlugin->name();
+
+            PluginInfo info = { loadedPlugin->name(), filePath, loader, loadedPlugin };
+            loadedPlugins.append(info);
+
+            QAction *action = new QAction(loadedPlugin->name());
+            action->setData(QVariant::fromValue<void*>(loadedPlugin));
+
+            editMenu->addAction(action);
+            pluginToolBar->addAction(action);
+            editPlugins[loadedPlugin->name()] = loadedPlugin;
+            connect(action, SIGNAL(triggered(bool)), this, SLOT(PluginPerform()));
+        } else {
+            qDebug() << "File is not a valid plugin:" << filePath;
+            loader->unload();
+            delete loader;
+        }
+    }
+}
+
+void MainWindow::UnloadPlugins() {
+    if (loadedPlugins.isEmpty()) {
+        QMessageBox::information(this, "Unload Plugin", "No plugins loaded.");
+        return;
+    }
+    PluginUnloadDialog dlg(loadedPlugins, this);
+    if (dlg.exec() == QDialog::Accepted) {
+        QList<int> indexes = dlg.selectedIndexes();
+        std::sort(indexes.begin(), indexes.end(), std::greater<int>());
+
+        for (auto i : std::as_const(indexes)) {
+            PluginInfo info = loadedPlugins[i];
+            auto actions = pluginToolBar->actions();
+            for (QAction* action : std::as_const(actions)) {
+                if (action->data().value<void*>() == info.instance) {
+                    pluginToolBar->removeAction(action);
+                    delete action;
+                    break;
+                }
+            }
+
+            if (!info.loader->unload()) {
+                qDebug() << "Failed to unload plugin:" << info.filePath;
+            } else {
+                qDebug() << "Plugin unloaded:" << info.filePath;
+            }
+
+            delete info.loader;
+            loadedPlugins.removeAt(i);
+        }
+    }
 }
 
 void MainWindow::PluginPerform() {

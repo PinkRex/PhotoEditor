@@ -12,6 +12,7 @@ SOURCES += \
     Helper.cpp \
     ImageHistoryManager.cpp \
     ImageView.cpp \
+    PluginUnloadDialog.cpp \
     ScreenshotCropper.cpp \
     UIInitializer.cpp \
     main.cpp \
@@ -23,6 +24,7 @@ HEADERS += \
     ImageHistoryManager.h \
     ImageView.h \
     PhotoEditorPluginInterface.h \
+    PluginUnloadDialog.h \
     ScreenshotCropper.h \
     UIInitializer.h \
     mainwindow.h \

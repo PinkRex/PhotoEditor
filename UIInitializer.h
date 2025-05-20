@@ -27,7 +27,7 @@ class UIInitializer {
 public:
     static void InitUI(MainWindow *mainWindow);
     static void CreateActions(MainWindow *mainWindow);
-    static void LoadPlugins(MainWindow *mainWindow);
+    static void AutoLoadPlugins(MainWindow *mainWindow);
 };
 
 #endif // UI_INITIALIZER_H

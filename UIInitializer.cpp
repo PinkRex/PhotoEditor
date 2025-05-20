@@ -6,6 +6,7 @@ void UIInitializer::InitUI(MainWindow *mainWindow) {
     mainWindow->getFileMenu() = mainWindow->menuBar()->addMenu("&File");
     mainWindow->getViewMenu() = mainWindow->menuBar()->addMenu("&View");
     mainWindow->getEditMenu() = mainWindow->menuBar()->addMenu("&Edit");
+    mainWindow->getPluginMenu() = mainWindow->menuBar()->addMenu("&Plugins");
     mainWindow->getHelpMenu() = mainWindow->menuBar()->addMenu("&Help");
 
     mainWindow->getFileToolBar() = mainWindow->addToolBar("File");
@@ -84,6 +85,10 @@ void UIInitializer::InitUI(MainWindow *mainWindow) {
     mainWindow->getEditToolBar()->addAction(mainWindow->getResizeImageAction());
     mainWindow->getEditToolBar()->addAction(mainWindow->getCropImageAction());
 
+    // Group Plugins Menu
+    mainWindow->getPluginMenu()->addAction(mainWindow->getLoadPluginsAction());
+    mainWindow->getPluginMenu()->addAction(mainWindow->getUnloadPluginAction());
+
     // Group Help menu
     mainWindow->getHelpMenu()->addAction(mainWindow->getAboutAction());
 }
@@ -103,6 +108,8 @@ void UIInitializer::CreateActions(MainWindow *mainWindow) {
     mainWindow->getRotateImageAction() = new QAction("&Rotate", mainWindow);
     mainWindow->getResizeImageAction() = new QAction("&Resize", mainWindow);
     mainWindow->getCropImageAction() = new QAction("&Crop", mainWindow);
+    mainWindow->getLoadPluginsAction() = new QAction("Load Plugins", mainWindow);
+    mainWindow->getUnloadPluginAction() = new QAction("Unload Plugins", mainWindow);
 
     mainWindow->connect(mainWindow->getOpenAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(OpenImage()));
     mainWindow->connect(mainWindow->getCropScreenAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(CropScreen()));
@@ -118,24 +125,45 @@ void UIInitializer::CreateActions(MainWindow *mainWindow) {
     mainWindow->connect(mainWindow->getRotateImageAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(RotateImage()));
     mainWindow->connect(mainWindow->getResizeImageAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(ResizeImage()));
     mainWindow->connect(mainWindow->getCropImageAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(CropImage()));
+    mainWindow->connect(mainWindow->getLoadPluginsAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(LoadPlugins()));
+    mainWindow->connect(mainWindow->getUnloadPluginAction(), SIGNAL(triggered(bool)), mainWindow, SLOT(UnloadPlugins()));
 }
 
-void UIInitializer::LoadPlugins(MainWindow *mainWindow) {
+void UIInitializer::AutoLoadPlugins(MainWindow *mainWindow) {
     QDir pluginsDir(QApplication::instance()->applicationDirPath() + "/plugins");
     QStringList nameFilters;
     nameFilters << "*.dll";
+
     QFileInfoList plugins = pluginsDir.entryInfoList(nameFilters, QDir::NoDotAndDotDot | QDir::Files, QDir::Name);
-    foreach(QFileInfo plugin, plugins) {
-        QPluginLoader pluginLoader(plugin.absoluteFilePath(), mainWindow);
-        PhotoEditorPluginInterface *plugin_ptr = dynamic_cast<PhotoEditorPluginInterface*>(pluginLoader.instance());
-        if(plugin_ptr) {
-            QAction *action = new QAction(plugin_ptr->name());
+
+    foreach (const QFileInfo& plugin, plugins) {
+        QPluginLoader* loader = new QPluginLoader(plugin.absoluteFilePath(), mainWindow);
+        QObject* instance = loader->instance();
+
+        if (!instance) {
+            qDebug() << "bad plugin: " << plugin.absoluteFilePath() << "error:" << loader->errorString();
+            delete loader;
+            continue;
+        }
+
+        PhotoEditorPluginInterface* plugin_ptr = qobject_cast<PhotoEditorPluginInterface*>(instance);
+        if (plugin_ptr) {
+            MainWindow::PluginInfo info = { plugin_ptr->name(), plugin.absoluteFilePath(), loader, plugin_ptr };
+            mainWindow->loadedPlugins.append(info);
+
+            QAction* action = new QAction(plugin_ptr->name(), mainWindow);
+            action->setData(QVariant::fromValue<void*>(plugin_ptr));
+
             mainWindow->getEditMenu()->addAction(action);
             mainWindow->getPluginToolBar()->addAction(action);
             mainWindow->getEditPlugins()[plugin_ptr->name()] = plugin_ptr;
+
             mainWindow->connect(action, SIGNAL(triggered(bool)), mainWindow, SLOT(PluginPerform()));
         } else {
-            qDebug() << "bad plugin: " << plugin.absoluteFilePath();
+            qDebug() << "invalid interface for plugin:" << plugin.absoluteFilePath();
+            loader->unload();
+            delete loader;
         }
     }
 }
+
