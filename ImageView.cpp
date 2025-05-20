@@ -24,7 +24,6 @@ void ImageView::onSelectionFinished(std::function<void(QRect)> callback) {
     });
 }
 
-// Return the selected area
 QRect ImageView::getSelectionRect() const {
     return mapToScene(selectionRect).boundingRect().toRect();
 }
@@ -77,7 +76,6 @@ void ImageView::mouseReleaseEvent(QMouseEvent *event) {
 
         if (!selectionRect.isNull() && !cropMode) {
             QRect sceneRect = mapToScene(selectionRect).boundingRect().toRect();
-            // TODO: Make sure crop mode doesn't get here
             emit selectionFinished(sceneRect);
         }
     }
@@ -87,7 +85,9 @@ void ImageView::mouseReleaseEvent(QMouseEvent *event) {
 void ImageView::drawForeground(QPainter *painter, const QRectF &rect) {
     Q_UNUSED(rect);
     if (!selectionRect.isNull()) {
-        painter->setPen(QPen(Qt::red, 2));
+        QPen pen = QPen(Qt::red, 2);
+        pen.setStyle(Qt::DashLine);
+        painter->setPen(pen);
         painter->drawRect(mapToScene(selectionRect).boundingRect());
     }
 }

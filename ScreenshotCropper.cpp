@@ -6,8 +6,7 @@
 #include <QCoreApplication>
 #include <QMessageBox>
 
-ScreenshotCropper::ScreenshotCropper(const QPixmap &screenshot, QWidget *parent)
-    : QWidget(parent), m_screenshot(screenshot) {
+ScreenshotCropper::ScreenshotCropper(const QPixmap &screenshot, QWidget *parent) : QWidget(parent), m_screenshot(screenshot) {
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setWindowState(Qt::WindowFullScreen);
     setAttribute(Qt::WA_TranslucentBackground);
