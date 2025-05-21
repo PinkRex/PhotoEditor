@@ -19,7 +19,6 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
-    DrawingInterface.h \
     Helper.h \
     ImageHistoryManager.h \
     ImageView.h \
@@ -27,8 +26,7 @@ HEADERS += \
     PluginUnloadDialog.h \
     ScreenshotCropper.h \
     UIInitializer.h \
-    mainwindow.h \
-    public/DrawingInterface.h
+    mainwindow.h
 
 FORMS += \
     mainwindow.ui

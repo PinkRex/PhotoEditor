@@ -101,8 +101,6 @@ void *ImageView::qt_metacast(const char *_clname)
     if (!_clname) return nullptr;
     if (!strcmp(_clname, qt_staticMetaObjectStaticContent<qt_meta_tag_ZN9ImageViewE_t>.strings))
         return static_cast<void*>(this);
-    if (!strcmp(_clname, "DrawingInterface"))
-        return static_cast< DrawingInterface*>(this);
     return QGraphicsView::qt_metacast(_clname);
 }
 

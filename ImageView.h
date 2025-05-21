@@ -2,7 +2,6 @@
 #ifndef IMAGE_VIEW_H
 #define IMAGE_VIEW_H
 
-#include "public/DrawingInterface.h"
 #include <QGraphicsView>
 #include <QMouseEvent>
 #include <QPainter>
@@ -12,15 +11,13 @@
 #include <QUrl>
 #include <QDebug>
 
-class ImageView : public QGraphicsView, public DrawingInterface {
+class ImageView : public QGraphicsView{
     Q_OBJECT
 
 public:
     explicit ImageView(QWidget *parent = nullptr);
     QRect getSelectionRect() const;
     void toggleDrawingMode(bool enabled);
-    void enableSelectionMode(bool enabled) override;
-    void onSelectionFinished(std::function<void(QRect)> callback) override;
     void setCropMode(bool enabled);
 
 protected:

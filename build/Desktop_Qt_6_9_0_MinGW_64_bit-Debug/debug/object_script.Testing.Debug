@@ -1,10 +1,12 @@
 debug/Helper.o
 debug/ImageHistoryManager.o
 debug/ImageView.o
+debug/PluginUnloadDialog.o
 debug/ScreenshotCropper.o
 debug/UIInitializer.o
 debug/main.o
 debug/mainwindow.o
 debug/moc_ImageView.o
+debug/moc_PluginUnloadDialog.o
 debug/moc_ScreenshotCropper.o
 debug/moc_mainwindow.o

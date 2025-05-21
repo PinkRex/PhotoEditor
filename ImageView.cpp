@@ -14,16 +14,6 @@ void ImageView::toggleDrawingMode(bool enabled) {
     }
 }
 
-void ImageView::enableSelectionMode(bool enabled) {
-    toggleDrawingMode(enabled);
-}
-
-void ImageView::onSelectionFinished(std::function<void(QRect)> callback) {
-    QObject::connect(this, &ImageView::selectionFinished, [=](const QRect& rect) {
-        callback(rect);
-    });
-}
-
 QRect ImageView::getSelectionRect() const {
     return mapToScene(selectionRect).boundingRect().toRect();
 }
@@ -73,11 +63,6 @@ void ImageView::mouseReleaseEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton && selecting) {
         selecting = false;
         viewport()->update();
-
-        if (!selectionRect.isNull() && !cropMode) {
-            QRect sceneRect = mapToScene(selectionRect).boundingRect().toRect();
-            emit selectionFinished(sceneRect);
-        }
     }
     QGraphicsView::mouseReleaseEvent(event);
 }
