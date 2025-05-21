@@ -6,7 +6,7 @@
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#include "../../../ImageView.h"
+#include "../../../../PhotoEditor-Deploy-Window/ImageView.h"
 #include <QtCore/qmetatype.h>
 
 #include <QtCore/qtmochelpers.h>
@@ -41,19 +41,13 @@ template <> constexpr inline auto ImageView::qt_create_metaobjectdata<qt_meta_ta
         "ImageView",
         "imageDropped",
         "",
-        "filePath",
-        "selectionFinished",
-        "rect"
+        "filePath"
     };
 
     QtMocHelpers::UintData qt_methods {
         // Signal 'imageDropped'
         QtMocHelpers::SignalData<void(const QString &)>(1, 2, QMC::AccessPublic, QMetaType::Void, {{
             { QMetaType::QString, 3 },
-        }}),
-        // Signal 'selectionFinished'
-        QtMocHelpers::SignalData<void(const QRect &)>(4, 2, QMC::AccessPublic, QMetaType::Void, {{
-            { QMetaType::QRect, 5 },
         }}),
     };
     QtMocHelpers::UintData qt_properties {
@@ -79,14 +73,11 @@ void ImageView::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
         case 0: _t->imageDropped((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 1: _t->selectionFinished((*reinterpret_cast< std::add_pointer_t<QRect>>(_a[1]))); break;
         default: ;
         }
     }
     if (_c == QMetaObject::IndexOfMethod) {
         if (QtMocHelpers::indexOfMethod<void (ImageView::*)(const QString & )>(_a, &ImageView::imageDropped, 0))
-            return;
-        if (QtMocHelpers::indexOfMethod<void (ImageView::*)(const QRect & )>(_a, &ImageView::selectionFinished, 1))
             return;
     }
 }
@@ -110,14 +101,14 @@ int ImageView::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 2)
+        if (_id < 1)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 2;
+        _id -= 1;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 2)
+        if (_id < 1)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 2;
+        _id -= 1;
     }
     return _id;
 }
@@ -126,11 +117,5 @@ int ImageView::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 void ImageView::imageDropped(const QString & _t1)
 {
     QMetaObject::activate<void>(this, &staticMetaObject, 0, nullptr, _t1);
-}
-
-// SIGNAL 1
-void ImageView::selectionFinished(const QRect & _t1)
-{
-    QMetaObject::activate<void>(this, &staticMetaObject, 1, nullptr, _t1);
 }
 QT_WARNING_POP

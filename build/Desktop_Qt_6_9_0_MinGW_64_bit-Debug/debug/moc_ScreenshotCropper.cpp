@@ -6,7 +6,7 @@
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#include "../../../ScreenshotCropper.h"
+#include "../../../../PhotoEditor-Deploy-Window/ScreenshotCropper.h"
 #include <QtCore/qmetatype.h>
 
 #include <QtCore/qtmochelpers.h>
